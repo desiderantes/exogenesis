@@ -1,0 +1,26 @@
+<exogenesis>
+	<translation>
+		<welcome>
+			<btninstall>
+				<en_GB>INSTALL</en_GB>
+			</btninstall>
+			<btnadvanced>
+				<en_GB>Advanced</en_GB>
+			</btnadvanced>
+			<lblWelcomeInfo>
+				<en_GB>Welcome to Exogenesis, the Aurora installer</en_GB>
+			</lblWelcomeInfo>
+		</welcome>
+		<messages>
+			<quit>
+				<en_GB>Do you really wish to cancel and close the installer?</en_GB>
+			</quit>
+			<uiloadfail>
+				<en_GB>Fail to load the User Interface.</en_GB>
+			</uiloadfail>
+		</messages>
+	</translation>
+	<images>
+		<mainimage>/home/steve/1-work/vala/exogenesis/images/welcome.png</mainimage>
+	</images>
+</exogenesis>
