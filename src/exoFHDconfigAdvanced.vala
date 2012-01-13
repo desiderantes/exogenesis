@@ -114,6 +114,7 @@ namespace Exogenesis
 		public FHDConfigAdvanced () 
 		{
 			this.GetMountPoints ();
+			this.GetFileSystemTypes ();
 			this.GetDiskInfo();
 
 			// Copy the old Schema to the New Schema
@@ -236,6 +237,19 @@ namespace Exogenesis
 			}
         }
 
+        // get the supported filesystem types
+        private void GetFileSystemTypes()
+        {
+            TreeIter iter;
+
+            // add the filesystems that udisks understands
+            foreach ( FilesystemType f in gHDManager.FileSystemTypes )
+            {
+                this._lstPartTypes.append(out iter);
+                this._lstPartTypes.set( iter, 0, f.Name, 1, f, -1 );
+            }
+        }
+
 		// Setup the treeview depending on the before/after view selected
         private void SetTreeColumns ()
         {
@@ -247,14 +261,14 @@ namespace Exogenesis
 			// Selectable combos if in NEW view
 			if ( this.rdoHDBefore.active )
 			{
-				this.trvHDALayout.insert_column_with_attributes ( 1, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
-				this.trvHDALayout.insert_column_with_attributes ( 2, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
+				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.MountPoint, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
+				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.FormatType, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
 			}
 
 			// Common column types
-			this.trvHDALayout.insert_column_with_attributes ( 0, "Drive", new CellRendererText (), "text", this.PartitionCols.Drive, null );
-			this.trvHDALayout.insert_column_with_attributes ( 3, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
-            this.trvHDALayout.insert_column_with_attributes ( 4, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
+			this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.HardDisk, "Drive", new CellRendererText (), "text", this.PartitionCols.Drive, null );
+			this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.DisplaySize, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
+            this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.Label, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
 			
 			if ( this.rdoHDAfter.active )
 			{
@@ -262,18 +276,20 @@ namespace Exogenesis
 				cboMountPoints.text_column = 0;
 				cboMountPoints.model = this._lstMountPoints;
 				cboMountPoints.has_entry = false;
-				cboMountPoints.mode = Gtk.CellRendererMode.EDITABLE;
-				cboMountPoints.sensitive = true;
+				cboMountPoints.editable = true;
 				cboMountPoints.edited.connect ( this.OnCboMountPointsChanged );
 
-stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NULL" : "NOT NULL" );
-				this.trvHDALayout.insert_column_with_attributes ( 1, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
+				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.MountPoint, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
+
 
 				Gtk.CellRendererCombo cboFileTypes = new Gtk.CellRendererCombo ();
 				cboFileTypes.model = this._lstPartTypes;
-				cboFileTypes.mode = Gtk.CellRendererMode.EDITABLE;
+				cboFileTypes.editable = true;
 				cboFileTypes.text_column = 0;
-				this.trvHDALayout.insert_column_with_attributes ( 2, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
+				cboFileTypes.has_entry = false;
+				cboFileTypes.edited.connect ( this.OnCboFileTypesChanged );
+				
+				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.FormatType, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
 
 
 		        // create the toggle renderer, attaching the event for click
@@ -302,13 +318,13 @@ stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NUL
 		            }
 		        );
 
-        		this.trvHDALayout.insert_column_with_attributes ( 5, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
-        		this.trvHDALayout.insert_column_with_attributes ( 6, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
+        		this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.FormatFlag, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
+        		this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.UseFlag, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
 
 				CellRendererButton cellButtonDel = new CellRendererButton();
         		cellButtonDel.clicked.connect( this.OnCellDelClicked );
 
-				this.trvHDALayout.insert_column_with_attributes ( 7, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
+				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.Remove, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
 			}
 		}
 
@@ -360,13 +376,14 @@ stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NUL
 		// Copy partition Info from Current to NewPartition
 		private InstallPartition CopyPartition( PartitionInfo pi )
 		{
+stdout.printf( "MOUNT POINT FSTAB = %s\nMOUNT POINT = %s\n\n", pi.FSTabMountPoint, pi.MountPoint );
 			InstallPartition ip = new InstallPartition ();
 			ip.ByteSize = pi.Capacity;
 			ip.DisplaySize = pi.CapacityDescription;
 			ip.Format = false;
 			ip.Use = false;
 			ip.NewPartition = false;
-			ip.MountPoint = pi.FSTabMountPoint;
+			ip.MountPoint = "/"; // pi.FSTabMountPoint;
 			ip.Type = pi.OSType;
 			ip.TypeID = pi.OSTypeID;
 			ip.Label = pi.Label;
@@ -405,7 +422,7 @@ stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NUL
 						if ( ! ip.Type.down().contains("extended") )
 						{
 							this._lstNewPartitions.append( out iterPart, iterDisk );
-							this.PopulateListItemNew( iterPart, ip.MountPoint, ip.Type, iHD, ip.Label, false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
+							this.PopulateListItemNew( iterPart, "", ip.MountPoint, ip.Type, iHD, ip.Label, false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
 							this.UpdateSegbarNew( iHD, ip, PartCount );
 							PartCount++;
 						}
@@ -417,7 +434,7 @@ stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NUL
 							
 stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), ip.TypeID.to_string(), ip.Device );
 
-							this.PopulateListItemNew( partExt, "", "Extended", iHD, "", false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
+							this.PopulateListItemNew( partExt, "", "", "Extended", iHD, "", false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
 							PartCount++;
 
 							// this level will be the partition types inside an extended partition
@@ -425,7 +442,7 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 		                    {
 			                    TreeIter it;
 			                    this._lstNewPartitions.append ( out it, partExt );
-			                    this.PopulateListItemNew( it, p.MountPoint, p.Type, iHD, p.Label, false, false, "", p.ByteSize, p.TypeID, p.Device, "", false, p );
+			                    this.PopulateListItemNew( it, "", p.MountPoint, p.Type, iHD, p.Label, false, false, "", p.ByteSize, p.TypeID, p.Device, "", false, p );
 
 								if ( iHD.SerialNumber == selectedHD.SerialNumber )
 								{ this.UpdateSegbarNew( iHD, p, PartCount ); }
@@ -440,11 +457,12 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 
 
 		// populate the selected iter - code reduction exercise :-) - NEW LAYOUT
-		private void PopulateListItemNew( TreeIter iter, string mountpoint, string ostype, InstallHardDisk hd, string label, bool format,
+		private void PopulateListItemNew( TreeIter iter, string drivename, string mountpoint, string ostype, InstallHardDisk hd, string label, bool format,
 											bool use, string icon, uint64 size, string ostypeid, string device, string partitionid, 
 		                             	    bool newpartition, InstallPartition p )
 		{
 	        this._lstNewPartitions.set ( iter,
+	                                  this.PartitionCols.Drive, drivename,
 	                                  this.PartitionCols.MountPoint, mountpoint,
 	                                  this.PartitionCols.DisplaySize, GeneralFunctions.FormatHDSize(size),
 	                                  this.PartitionCols.FormatType, ostype,
@@ -1044,7 +1062,7 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 
 				// set the currently selected partition to unallocated
 				InstallPartition ipart = new InstallPartition();
-				this.PopulateListItemNew ( iter, "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, ipart); 
+				this.PopulateListItemNew ( iter, "", "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, ipart); 
 			 	this.RecalcUnallocated(iter);
 		 	}
         }
@@ -1184,12 +1202,20 @@ stdout.printf("AVAILABLE SIZE %s\n", ( ihd.AvailableSize() - ihd.StartSector ).t
             this.trvHDALayout.expand_all();
         }
 
-		private void OnCboMountPointsChanged ()
+		private void OnCboMountPointsChanged ( string path, string val )
 		{
+    		var tree_path = new TreePath.from_string (path);
+            TreeIter iter;
+            this._lstNewPartitions.get_iter (out iter, tree_path);
+            this._lstNewPartitions.set (iter, this.PartitionCols.MountPoint, val, -1);
 		}
 
-		private void OnCboFileTypesChanged ()
+		private void OnCboFileTypesChanged ( string path, string val )
 		{
+    		var tree_path = new TreePath.from_string (path);
+            TreeIter iter;
+            this._lstNewPartitions.get_iter (out iter, tree_path);
+            this._lstNewPartitions.set (iter, this.PartitionCols.FormatType, val, -1);			
 		}
 		
 		public void OnDeviceConnected()
