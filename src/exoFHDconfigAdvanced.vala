@@ -25,7 +25,8 @@ namespace Exogenesis
 	{
 	    private enum PartitionCols
         {
-            MountPoint = 0,
+			Drive = 0,
+            MountPoint,
             DisplaySize,
             FormatType,
             Label,
@@ -91,7 +92,7 @@ namespace Exogenesis
         //                      6 = Use Partition Flag : 7 = DELETE :  8 = Paritition byte size : 9 = Partition Type ID
         //						10 = DeviceName : 11 = Partition ID : 12 = New Partition Indicator : 13 = Partition Object
 		
-        private Gtk.TreeStore _lstPartitions = new Gtk.TreeStore ( 14, typeof(string), typeof(string), typeof(string), 
+        private Gtk.TreeStore _lstPartitions = new Gtk.TreeStore ( 15, typeof(string), typeof(string), typeof(string), typeof(string), 
         																typeof(string), typeof(HardDisk), typeof(bool), 
                                                                			typeof(bool), typeof(string), typeof(uint64), 
                                                                			typeof(string), typeof(string), typeof(string),
@@ -99,7 +100,7 @@ namespace Exogenesis
 		
 
 		// this is used to store the model for the new hard disk partition schema
-        private Gtk.TreeStore _lstNewPartitions = new Gtk.TreeStore ( 14,  typeof(string), typeof(string), typeof(string), 
+        private Gtk.TreeStore _lstNewPartitions = new Gtk.TreeStore ( 15,  typeof(string), typeof(string), typeof(string), typeof(string), 
         																	typeof(string), typeof(InstallHardDisk), typeof(bool), 
                                                                				typeof(bool), typeof(string), typeof(uint64), 
                                                                				typeof(string), typeof(string), typeof(string),
@@ -230,15 +231,8 @@ namespace Exogenesis
 
             foreach ( MountPoint mp in gHDManager.GetMountPoints() )
             {
-                string sDisplay;
-
-                if ( mp.Key != "none" )
-                { sDisplay = "%s - %s".printf(mp.Key, mp.Path); }
-                else
-                { sDisplay = "%s".printf(mp.Key); }
-
                 this._lstMountPoints.append(out iter);
-                this._lstMountPoints.set( iter, 0, sDisplay, 1, mp);
+                this._lstMountPoints.set( iter, 0, mp.Path, 1, mp);
 			}
         }
 
@@ -253,28 +247,33 @@ namespace Exogenesis
 			// Selectable combos if in NEW view
 			if ( this.rdoHDBefore.active )
 			{
-				this.trvHDALayout.insert_column_with_attributes ( 0, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
-				this.trvHDALayout.insert_column_with_attributes ( 1, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
+				this.trvHDALayout.insert_column_with_attributes ( 1, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
+				this.trvHDALayout.insert_column_with_attributes ( 2, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
 			}
 
 			// Common column types
-			this.trvHDALayout.insert_column_with_attributes ( 2, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
-            this.trvHDALayout.insert_column_with_attributes ( 3, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
+			this.trvHDALayout.insert_column_with_attributes ( 0, "Drive", new CellRendererText (), "text", this.PartitionCols.Drive, null );
+			this.trvHDALayout.insert_column_with_attributes ( 3, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
+            this.trvHDALayout.insert_column_with_attributes ( 4, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
 			
 			if ( this.rdoHDAfter.active )
 			{
 				Gtk.CellRendererCombo cboMountPoints = new Gtk.CellRendererCombo ();
 				cboMountPoints.text_column = 0;
 				cboMountPoints.model = this._lstMountPoints;
+				cboMountPoints.has_entry = false;
 				cboMountPoints.mode = Gtk.CellRendererMode.EDITABLE;
-				
-				this.trvHDALayout.insert_column_with_attributes ( 0, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
+				cboMountPoints.sensitive = true;
+				cboMountPoints.edited.connect ( this.OnCboMountPointsChanged );
+
+stdout.printf ( "CELL RENDERERCOMBO IS %s\n ", ( cboMountPoints == null ) ? "NULL" : "NOT NULL" );
+				this.trvHDALayout.insert_column_with_attributes ( 1, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
 
 				Gtk.CellRendererCombo cboFileTypes = new Gtk.CellRendererCombo ();
 				cboFileTypes.model = this._lstPartTypes;
 				cboFileTypes.mode = Gtk.CellRendererMode.EDITABLE;
 				cboFileTypes.text_column = 0;
-				this.trvHDALayout.insert_column_with_attributes ( 1, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
+				this.trvHDALayout.insert_column_with_attributes ( 2, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
 
 
 		        // create the toggle renderer, attaching the event for click
@@ -303,13 +302,13 @@ namespace Exogenesis
 		            }
 		        );
 
-        		this.trvHDALayout.insert_column_with_attributes ( 4, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
-        		this.trvHDALayout.insert_column_with_attributes ( 5, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
+        		this.trvHDALayout.insert_column_with_attributes ( 5, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
+        		this.trvHDALayout.insert_column_with_attributes ( 6, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
 
 				CellRendererButton cellButtonDel = new CellRendererButton();
         		cellButtonDel.clicked.connect( this.OnCellDelClicked );
 
-				this.trvHDALayout.insert_column_with_attributes ( 6, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
+				this.trvHDALayout.insert_column_with_attributes ( 7, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
 			}
 		}
 
@@ -394,9 +393,10 @@ namespace Exogenesis
 
                     // add the HD to the model
                     this._lstNewPartitions.append ( out iterDisk, null ); 
-                    this._lstNewPartitions.set ( iterDisk, this.PartitionCols.MountPoint, iHD.Model, this.PartitionCols.HardDisk, iHD, -1 );
+                    this._lstNewPartitions.set ( iterDisk, this.PartitionCols.Drive, iHD.Model, this.PartitionCols.HardDisk, iHD, -1 );
 					this._lstNewPartitions.set ( iterDisk, this.PartitionCols.RemoveIcon, Gtk.Stock.DELETE, -1 );
-					
+
+					// Add the partitions
                     foreach ( InstallPartition ip in iHD )
                     {
                         TreeIter iterPart;
@@ -476,7 +476,7 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 
 				// add the HD to the model
                 this._lstPartitions.append ( out iterDisk, null ); 
-                this._lstPartitions.set ( iterDisk, this.PartitionCols.MountPoint, hd.Model, this.PartitionCols.HardDisk, hd, -1 );
+                this._lstPartitions.set ( iterDisk, this.PartitionCols.Drive, hd.Model, this.PartitionCols.HardDisk, hd, -1 );
 
                 foreach ( PartitionInfo pi in hd )
                 {
