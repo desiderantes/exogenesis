@@ -237,13 +237,8 @@ namespace Exogenesis
                 else
                 { sDisplay = "%s".printf(mp.Key); }
 
-                // if ( ! this._Owner.IsMountPointUsed(sDisplay) )
-         //       {
-                    this._lstMountPoints.append(out iter);
-                    this._lstMountPoints.set( iter, 0, sDisplay, 1, mp);
-         //       }
-         //   }
-         //   this.cboCPMountPoint.set_active(0);
+                this._lstMountPoints.append(out iter);
+                this._lstMountPoints.set( iter, 0, sDisplay, 1, mp);
 			}
         }
 
@@ -271,13 +266,13 @@ namespace Exogenesis
 				Gtk.CellRendererCombo cboMountPoints = new Gtk.CellRendererCombo ();
 				cboMountPoints.text_column = 0;
 				cboMountPoints.model = this._lstMountPoints;
-				cboMountPoints.mode = Gtk.CellRendererMode.ACTIVATABLE;
+				cboMountPoints.mode = Gtk.CellRendererMode.EDITABLE;
 				
 				this.trvHDALayout.insert_column_with_attributes ( 0, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
 
 				Gtk.CellRendererCombo cboFileTypes = new Gtk.CellRendererCombo ();
 				cboFileTypes.model = this._lstPartTypes;
-				cboFileTypes.mode = Gtk.CellRendererMode.ACTIVATABLE;
+				cboFileTypes.mode = Gtk.CellRendererMode.EDITABLE;
 				cboFileTypes.text_column = 0;
 				this.trvHDALayout.insert_column_with_attributes ( 1, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
 
@@ -1189,6 +1184,14 @@ stdout.printf("AVAILABLE SIZE %s\n", ( ihd.AvailableSize() - ihd.StartSector ).t
             this.trvHDALayout.expand_all();
         }
 
+		private void OnCboMountPointsChanged ()
+		{
+		}
+
+		private void OnCboFileTypesChanged ()
+		{
+		}
+		
 		public void OnDeviceConnected()
 		{  this.GetDiskInfo(); }
 
