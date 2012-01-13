@@ -43,13 +43,14 @@ namespace Exogenesis
     
         private enum TreeCols
         {
-            MountPoint = 0,
-            DisplaySize,
-            FormatType,
-            FormatFlag,
-            UseFlag,
-            Label,
-            Remove
+			HardDisk = 0,
+            MountPoint = 1,
+			FormatType = 2,
+            DisplaySize = 3,
+            FormatFlag = 4,
+            UseFlag = 5,
+            Label = 6,
+            Remove =7
         }
 
 		private Gtk.Box boxHDAdvanced;
@@ -98,20 +99,27 @@ namespace Exogenesis
 		
 
 		// this is used to store the model for the new hard disk partition schema
-        private Gtk.TreeStore _lstNewPartitions = new Gtk.TreeStore ( 14, typeof(string), typeof(string), typeof(string), 
-        																typeof(string), typeof(InstallHardDisk), typeof(bool), 
-                                                               			typeof(bool), typeof(string), typeof(uint64), 
-                                                               			typeof(string), typeof(string), typeof(string),
-                                                               			typeof(bool), typeof(InstallPartition) );
+        private Gtk.TreeStore _lstNewPartitions = new Gtk.TreeStore ( 14,  typeof(string), typeof(string), typeof(string), 
+        																	typeof(string), typeof(InstallHardDisk), typeof(bool), 
+                                                               				typeof(bool), typeof(string), typeof(uint64), 
+                                                               				typeof(string), typeof(string), typeof(string),
+                                                               				typeof(bool), typeof(InstallPartition) );
 
+		// combo models
+		private ListStore _lstPartTypes = new ListStore( 2, typeof(string), typeof(FilesystemType) );
+        private ListStore _lstMountPoints = new ListStore( 2, typeof(string), typeof(MountPoint) );
+		
 		// Constructor
 		public FHDConfigAdvanced () 
 		{
-            this.Build();
-            this.GetDiskInfo();
+			this.GetMountPoints ();
+			this.GetDiskInfo();
 
 			// Copy the old Schema to the New Schema
 			this.CopyOldSchemaToNew ();
+
+			// build the screen
+			this.Build();
 
 			// set selected HD to the first in list
 			if ( gHDManager.HardDiskCount > 0 )
@@ -174,7 +182,7 @@ namespace Exogenesis
 				this.cboHDADrives.changed.connect( this.OnCboHD_Changed );
 				this.rdoHDAfter.clicked.connect( this.OnRdoAfter_Click );
 				this.rdoHDBefore.clicked.connect( this.OnRdoBefore_Click );
-				this.trvHDALayout.button_release_event.connect ( this.TrvHDALayout_RowClick );
+
 				this.realize.connect ( this.OnRealized );
 				this.btnHDAAddPartition.clicked.connect( this.OnBtnCreatePartition_Click );
 				
@@ -194,6 +202,9 @@ namespace Exogenesis
 
 				// check the previous OSType
 				gPreviousOS.GetFSTabMountPoints();
+
+				// default model on treeview
+				this.trvHDALayout.model = this._lstPartitions;
 				
 	            // show it all :-)
 	            this.show_all();
@@ -208,22 +219,69 @@ namespace Exogenesis
             } 			
 		}
 
+        // get the standard mount points
+        private void GetMountPoints()
+        {
+            TreeIter iter;
+
+            // clear down before populating 
+            // (added as this is called each time a partition is created/removed)
+            this._lstMountPoints.clear();
+
+            foreach ( MountPoint mp in gHDManager.GetMountPoints() )
+            {
+                string sDisplay;
+
+                if ( mp.Key != "none" )
+                { sDisplay = "%s - %s".printf(mp.Key, mp.Path); }
+                else
+                { sDisplay = "%s".printf(mp.Key); }
+
+                // if ( ! this._Owner.IsMountPointUsed(sDisplay) )
+         //       {
+                    this._lstMountPoints.append(out iter);
+                    this._lstMountPoints.set( iter, 0, sDisplay, 1, mp);
+         //       }
+         //   }
+         //   this.cboCPMountPoint.set_active(0);
+			}
+        }
+
 		// Setup the treeview depending on the before/after view selected
-        private void SetTreeColumns()
+        private void SetTreeColumns ()
         {
 			// Remove all columns before displaying data
 			foreach ( Gtk.TreeViewColumn tvc in this.trvHDALayout.get_columns() )
 			{ this.trvHDALayout.remove_column( tvc ); 	}
 			
             // Set up the treeview
-            this.trvHDALayout.insert_column_with_attributes (-1, "Mount Point", new CellRendererText (), "text", this.PartitionCols.MountPoint, null);
-            this.trvHDALayout.insert_column_with_attributes (-1, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
-            this.trvHDALayout.insert_column_with_attributes (-1, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
-            this.trvHDALayout.insert_column_with_attributes (-1, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
+			// Selectable combos if in NEW view
+			if ( this.rdoHDBefore.active )
+			{
+				this.trvHDALayout.insert_column_with_attributes ( 0, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
+				this.trvHDALayout.insert_column_with_attributes ( 1, "Type", new CellRendererText (), "text", this.PartitionCols.FormatType, null);
+			}
 
-			// Only display the delete on AFTER view
+			// Common column types
+			this.trvHDALayout.insert_column_with_attributes ( 2, "Size", new CellRendererText (), "text", this.PartitionCols.DisplaySize, null);
+            this.trvHDALayout.insert_column_with_attributes ( 3, "Label", new CellRendererText (), "text", this.PartitionCols.Label, null);
+			
 			if ( this.rdoHDAfter.active )
 			{
+				Gtk.CellRendererCombo cboMountPoints = new Gtk.CellRendererCombo ();
+				cboMountPoints.text_column = 0;
+				cboMountPoints.model = this._lstMountPoints;
+				cboMountPoints.mode = Gtk.CellRendererMode.ACTIVATABLE;
+				
+				this.trvHDALayout.insert_column_with_attributes ( 0, "Mount Point", cboMountPoints, "text", this.PartitionCols.MountPoint, null );
+
+				Gtk.CellRendererCombo cboFileTypes = new Gtk.CellRendererCombo ();
+				cboFileTypes.model = this._lstPartTypes;
+				cboFileTypes.mode = Gtk.CellRendererMode.ACTIVATABLE;
+				cboFileTypes.text_column = 0;
+				this.trvHDALayout.insert_column_with_attributes ( 1, "Type", cboFileTypes, "text", this.PartitionCols.FormatType, null );
+
+
 		        // create the toggle renderer, attaching the event for click
 		        Gtk.CellRendererToggle togCellF = new Gtk.CellRendererToggle();
 		        togCellF.toggled.connect 
@@ -232,8 +290,8 @@ namespace Exogenesis
 		            {
 		                var tree_path = new TreePath.from_string (path);
 		                TreeIter iter;
-		                this._lstPartitions.get_iter (out iter, tree_path);
-		                this._lstPartitions.set (iter, this.PartitionCols.FormatFlag, !toggle.active);
+		                this._lstNewPartitions.get_iter (out iter, tree_path);
+		                this._lstNewPartitions.set (iter, this.PartitionCols.FormatFlag, !toggle.active, -1);
 		            }
 		        );            
 
@@ -245,24 +303,23 @@ namespace Exogenesis
 		            {
 		                var tree_path = new TreePath.from_string (path);
 		                TreeIter iter;
-		                this._lstPartitions.get_iter (out iter, tree_path);
-		                this._lstPartitions.set (iter, this.PartitionCols.UseFlag, !toggle.active);
+		                this._lstNewPartitions.get_iter (out iter, tree_path);
+		                this._lstNewPartitions.set (iter, this.PartitionCols.UseFlag, !toggle.active, -1 );
 		            }
 		        );
 
-        		this.trvHDALayout.insert_column_with_attributes (-1, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
-        		this.trvHDALayout.insert_column_with_attributes (-1, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
+        		this.trvHDALayout.insert_column_with_attributes ( 4, "Format", togCellF, "active", this.PartitionCols.FormatFlag, null);
+        		this.trvHDALayout.insert_column_with_attributes ( 5, "Use", togCellU, "active", this.PartitionCols.UseFlag, null);				
 
 				CellRendererButton cellButtonDel = new CellRendererButton();
         		cellButtonDel.clicked.connect( this.OnCellDelClicked );
 
-				this.trvHDALayout.insert_column_with_attributes (-1, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
+				this.trvHDALayout.insert_column_with_attributes ( 6, "Delete", cellButtonDel, "stockicon",  this.PartitionCols.RemoveIcon, null); 
 			}
-            this.trvHDALayout.set_model(this._lstPartitions);
-        }
+		}
 
 		// Default the new selection to the old and allow changes on new schema only
-		// this is run on screen initialise only
+		// this is run on screen initialise only - This is default layout
 		private void CopyOldSchemaToNew ()
 		{
 			gInstallData.ClearInstallDisks();
@@ -270,13 +327,13 @@ namespace Exogenesis
 
 			foreach ( HardDisk hd in gHDManager.HardDisks )
 			{
-stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () );
 								
 				InstallHardDisk ihd = new InstallHardDisk();
 				ihd.SerialNumber = hd.SerialNumber;
 				ihd.DeviceName = hd.Device;
 				ihd.DriveSize = hd.Capacity;
 				ihd.Model = hd.Model;
+				ihd.StartSector = hd.StartSector;
 
 				foreach ( PartitionInfo pi in hd )
 				{
@@ -284,9 +341,10 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 					{
 						ip = new InstallPartition ();
 						ip.ByteSize = pi.Capacity;
+						ip.Device = pi.Device;
 						ip.DisplaySize = pi.CapacityDescription;
 						ip.Type = pi.PartitionType;
-						ip.MountPoint = pi.FSTabMountPoint;
+						ip.MountPoint = "";
 						ip.Start = pi.StartSector;
 						ip.End = pi.EndSector;
 						ip.TypeID = pi.OSTypeID;
@@ -349,32 +407,36 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
                         TreeIter iterPart;
 						int PartCount = 0;
 
-						// add partition info to model - This level with be a partition type or extended partition
-                        this._lstNewPartitions.append( out iterPart, iterDisk );
-					//	this._lstNewPartitions.set ( iterPart, this.PartitionCols.RemoveIcon, Gtk.Stock.DELETE, 
-					//	                        	  PartitionCols.FormatType, "Extended",
-					//	                        	  PartitionCols.DisplaySize, GeneralFunctions.FormatHDSize( ip.ByteSize), -1 );
-
-                        this.PopulateListItemNew( ref iterPart, ip.MountPoint, ip.Type, iHD, ip.Label, ip.Format, ip.Use, "", ip.ByteSize, ip.TypeID, ip.Device, "", ip.NewPartition, ip );
-
-						// Only Update Segbar if the partition is not extended
 						if ( ! ip.Type.down().contains("extended") )
 						{
-							if ( iHD.SerialNumber == selectedHD.SerialNumber )
-							{ this.UpdateSegbarNew( iHD, ip, PartCount ); } 
-						}
-
-						// this level will be the partition types inside an extended partition
-                        foreach ( InstallPartition p in ip )
-                        {
-	                        TreeIter it;
+							this._lstNewPartitions.append( out iterPart, iterDisk );
+							this.PopulateListItemNew( iterPart, ip.MountPoint, ip.Type, iHD, ip.Label, false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
+							this.UpdateSegbarNew( iHD, ip, PartCount );
 							PartCount++;
-	                        this._lstNewPartitions.append ( out it, iterPart );
-	                        this.PopulateListItemNew( ref it, p.MountPoint, p.Type, iHD, p.Label, p.Format, p.Use, "", p.ByteSize, p.TypeID, p.Device, "", p.NewPartition, p );
+						}
+						else
+						{
+							TreeIter partExt;
+							// add the extended partition
+							this._lstNewPartitions.append ( out partExt, iterDisk );
+							
+stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), ip.TypeID.to_string(), ip.Device );
 
-							if ( iHD.SerialNumber == selectedHD.SerialNumber )
-							{ this.UpdateSegbarNew( iHD, p, PartCount ); }
-                        }
+							this.PopulateListItemNew( partExt, "", "Extended", iHD, "", false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
+							PartCount++;
+
+							// this level will be the partition types inside an extended partition
+		                    foreach ( InstallPartition p in ip )
+		                    {
+			                    TreeIter it;
+			                    this._lstNewPartitions.append ( out it, partExt );
+			                    this.PopulateListItemNew( it, p.MountPoint, p.Type, iHD, p.Label, false, false, "", p.ByteSize, p.TypeID, p.Device, "", false, p );
+
+								if ( iHD.SerialNumber == selectedHD.SerialNumber )
+								{ this.UpdateSegbarNew( iHD, p, PartCount ); }
+								PartCount++;
+		                    }
+						}
                     }
                 }
             }
@@ -383,7 +445,7 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 
 
 		// populate the selected iter - code reduction exercise :-) - NEW LAYOUT
-		private void PopulateListItemNew( ref TreeIter iter, string mountpoint, string ostype, InstallHardDisk hd, string label, bool format,
+		private void PopulateListItemNew( TreeIter iter, string mountpoint, string ostype, InstallHardDisk hd, string label, bool format,
 											bool use, string icon, uint64 size, string ostypeid, string device, string partitionid, 
 		                             	    bool newpartition, InstallPartition p )
 		{
@@ -410,23 +472,22 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
             // clear the tree
             this._lstPartitions.clear();
 			int PartCount = 0;
-			string label;
 
             HardDisk hd = this.GetSelectedHD();
 
             if ( hd != null )
             {
                 TreeIter iterDisk;
-                // add the HD to the model
+
+				// add the HD to the model
                 this._lstPartitions.append ( out iterDisk, null ); 
                 this._lstPartitions.set ( iterDisk, this.PartitionCols.MountPoint, hd.Model, this.PartitionCols.HardDisk, hd, -1 );
-                this._lstPartitions.set ( iterDisk, this.PartitionCols.RemoveIcon, Gtk.Stock.DELETE, -1 );
 
                 foreach ( PartitionInfo pi in hd )
                 {
 	                TreeIter iterPart;
 
-                    if ( pi.OSType != "" &&  pi.Device != hd.Device )
+                    if ( pi.OSType != "" &&  pi.Device != hd.Device && !pi.PartitionType.down().contains("extended") )
                     {
                         // add partition to model
                         this._lstPartitions.append ( out iterPart, iterDisk );
@@ -438,7 +499,8 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
                     {
 	                    this._lstPartitions.append ( out iterPart, iterDisk );
 	                    this.PopulateListItemCurrent( iterPart, "", "Extended", hd, pi.Label, false, false, "", pi.Capacity, pi.OSTypeID, pi.Device, "", false, pi );
-	                    
+	                    PartCount++;
+						
 	                    // add the partitions held in the extended partition
 	                    foreach ( PartitionInfo p in pi )
 	                    {
@@ -468,8 +530,11 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 		private void UpdateSegbarNew( InstallHardDisk hd, InstallPartition pi, int PartCount)
 		{
 			string label;
-			label = "%s\n%s".printf( pi.Type, pi.DisplaySize ); 
-			this.AddToDiskDisplayBar( this.segbarHD, hd.DriveSize, pi.ByteSize, label, PartCount );
+			if ( hd.SerialNumber == this.GetSelectedHD().SerialNumber )
+			{
+				label = "%s\n%s".printf( pi.Type, pi.DisplaySize ); 
+				this.AddToDiskDisplayBar( this.segbarHD, hd.DriveSize, pi.ByteSize, label, PartCount );
+			}
 		}
 				
 		// populate the selected iter - code reduction exercise :-) - CURRENT LAYOUT
@@ -779,26 +844,6 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
             { this.AddToDiskDisplayBar( this.segbarHD, hd.DriveSize, available, "UNALLOCATED", 7 ); }
         }
 
-		private void PopulateFromExisting( TreeIter iter, int idx, HardDisk hd )
-		{
-            GLib.Value pSize;
-            GLib.Value pType;
-            GLib.Value pMount;
-            GLib.Value pLabel;
-			
-            // Get the part details
-            this._lstPartitions.get_value(iter, this.PartitionCols.MountPoint, out pMount);
-            this._lstPartitions.get_value(iter, this.PartitionCols.ByteSize, out pSize);
-            this._lstPartitions.get_value(iter, this.PartitionCols.FormatType, out pType);
-            this._lstPartitions.get_value(iter, this.PartitionCols.Label, out pLabel);
-
-            // add the details
-            string mount, fstype, label;
-            fstype = ( pType.get_string() != null ) ? pType.get_string() : "";
-            mount = ( pMount.get_string() != null ) ? "\n" + pMount.get_string() : "";
-            label = ( pLabel.get_string() != null ) ? "\n" + pLabel.get_string() : "";
-            this.AddToDiskDisplayBar( this.segbarHD, hd.Capacity, pSize.get_uint64(), "%s%s%s".printf(fstype, mount, label), idx );
-		}
 
         // populate the install data - Disk and partition schema
         private void AddInstallPartitions()
@@ -958,13 +1003,6 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 			while ( this._lstPartitions.iter_next(ref iter) );
 		}
 		
-		private TreeIter GetSelectedPartition()
-		{
-			TreeIter iter;
-			TreeSelection ts = this.trvHDALayout.get_selection();
-			ts.get_selected(null, out iter);
-			return iter;
-		}
 		
 // CONTROL EVENTS
         
@@ -975,43 +1013,43 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
             GLib.Value val;
 			InstallHardDisk ihd;
 			uint64 available;
-			Gtk.TreeStore selectedStore;
 
             // get the item on the path
-            Gtk.TreePath tp = new Gtk.TreePath.from_string(path);
+            Gtk.TreePath tp = new Gtk.TreePath.from_string ( path );
 
 			// set the store to the one working on
-			selectedStore = this._lstNewPartitions;
+			this._lstNewPartitions;
 			
             // check that the user hasn't clicked delete at drive level
-            if ( tp.get_depth() > 1 )
+            //if ( tp.get_depth() > 0 )
             {
-				selectedStore.get_iter(out iter, tp);
-				selectedStore.get_value(iter, this.PartitionCols.ByteSize, out val);
-				available = val.get_uint64();
-				selectedStore.get_value(iter, this.PartitionCols.HardDisk, out val);
+				this._lstNewPartitions.get_iter ( out iter, tp );
+				this._lstNewPartitions.get_value ( iter, this.PartitionCols.ByteSize, out val );
+				available = val.get_uint64 ();
+				this._lstNewPartitions.get_value ( iter, this.PartitionCols.HardDisk, out val );
 
 				// get the harddisk from current or from new config
 				ihd = ( InstallHardDisk )val; 
 
 				// check if the iter is the extended partition
-				if ( selectedStore.iter_has_child(iter) )
+				if ( this._lstNewPartitions.iter_has_child ( iter ) )
 				{
 					Gtk.TreeIter childIter;
 					int i;
 					
 					// remove the children
-					i = selectedStore.iter_n_children(iter) - 1;
-					
+					i = this._lstNewPartitions.iter_n_children ( iter ) - 1;
+
 					for ( int x = i; x > -1; x-- )
 					{ 
-						selectedStore.iter_nth_child(out childIter, iter, x);
-						selectedStore.remove(childIter);
+						this._lstNewPartitions.iter_nth_child ( out childIter, iter, x );
+						this._lstNewPartitions.remove ( childIter );
 					}
 				}
 
 				// set the currently selected partition to unallocated
-				this.PopulateListItemNew ( ref iter, "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, null); 
+				InstallPartition ipart = new InstallPartition();
+				this.PopulateListItemNew ( iter, "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, ipart); 
 			 	this.RecalcUnallocated(iter);
 		 	}
         }
@@ -1076,24 +1114,6 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 			}
 		}
 
-		// check the current row
-		public bool TrvHDALayout_RowClick(Gdk.EventButton evt)
-		{
-			TreeIter iter;
-			GLib.Value val;
-			TreeSelection ts = this.trvHDALayout.get_selection();
-			ts.get_selected(null, out iter);
-			bool enabled = false;
-
-			this._lstPartitions.get_value(iter, PartitionCols.FormatType, out val);
-
-			if ( val.get_string().down() == "unallocated" || val.get_string().down().contains("extended") )
-			{ enabled = true; }
-
-			//this.btnCreatePart.sensitive = enabled;
-
-			return false;
-		}
 
         public void OnBtnApply_Click()
         { 
@@ -1123,7 +1143,7 @@ stdout.printf ( "START SECTOR %s = %s\n", hd.Model, hd.StartSector.to_string () 
 				}
 			}
 
-stdout.printf("AVAILABLE SIZE %s\n", ihd.AvailableSize().to_string() );
+stdout.printf("AVAILABLE SIZE %s\n", ( ihd.AvailableSize() - ihd.StartSector ).to_string() );
 			
 			// check if there is anything available on the disk
 			if ( ihd != null && ihd.AvailableSize() > 0 )
@@ -1180,7 +1200,6 @@ stdout.printf("AVAILABLE SIZE %s\n", ihd.AvailableSize().to_string() );
 
 		private void OnRealized()
 		{
-			stdout.printf("REALISED\n");
 			this.OnCboHD_Changed(); 
 			this.show_all();
 		}

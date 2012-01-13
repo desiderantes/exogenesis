@@ -26,7 +26,6 @@ exogenesis is free software: you can redistribute it and/or modify it
 #include <stdlib.h>
 #include <string.h>
 #include <gee.h>
-#include <gdk/gdk.h>
 #include <stdio.h>
 #include <float.h>
 #include <math.h>
@@ -98,6 +97,26 @@ typedef struct _ExogenesisInstallHardDiskClass ExogenesisInstallHardDiskClass;
 typedef struct _ExogenesisInstallPartition ExogenesisInstallPartition;
 typedef struct _ExogenesisInstallPartitionClass ExogenesisInstallPartitionClass;
 
+#define EXOGENESIS_TYPE_FILESYSTEM_TYPE (exogenesis_filesystem_type_get_type ())
+#define EXOGENESIS_FILESYSTEM_TYPE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EXOGENESIS_TYPE_FILESYSTEM_TYPE, ExogenesisFilesystemType))
+#define EXOGENESIS_FILESYSTEM_TYPE_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EXOGENESIS_TYPE_FILESYSTEM_TYPE, ExogenesisFilesystemTypeClass))
+#define EXOGENESIS_IS_FILESYSTEM_TYPE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EXOGENESIS_TYPE_FILESYSTEM_TYPE))
+#define EXOGENESIS_IS_FILESYSTEM_TYPE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EXOGENESIS_TYPE_FILESYSTEM_TYPE))
+#define EXOGENESIS_FILESYSTEM_TYPE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EXOGENESIS_TYPE_FILESYSTEM_TYPE, ExogenesisFilesystemTypeClass))
+
+typedef struct _ExogenesisFilesystemType ExogenesisFilesystemType;
+typedef struct _ExogenesisFilesystemTypeClass ExogenesisFilesystemTypeClass;
+
+#define EXOGENESIS_TYPE_MOUNT_POINT (exogenesis_mount_point_get_type ())
+#define EXOGENESIS_MOUNT_POINT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EXOGENESIS_TYPE_MOUNT_POINT, ExogenesisMountPoint))
+#define EXOGENESIS_MOUNT_POINT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EXOGENESIS_TYPE_MOUNT_POINT, ExogenesisMountPointClass))
+#define EXOGENESIS_IS_MOUNT_POINT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EXOGENESIS_TYPE_MOUNT_POINT))
+#define EXOGENESIS_IS_MOUNT_POINT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EXOGENESIS_TYPE_MOUNT_POINT))
+#define EXOGENESIS_MOUNT_POINT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EXOGENESIS_TYPE_MOUNT_POINT, ExogenesisMountPointClass))
+
+typedef struct _ExogenesisMountPoint ExogenesisMountPoint;
+typedef struct _ExogenesisMountPointClass ExogenesisMountPointClass;
+
 #define EXOGENESIS_TYPE_HD_MANAGER (exogenesis_hd_manager_get_type ())
 #define EXOGENESIS_HD_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EXOGENESIS_TYPE_HD_MANAGER, ExogenesisHDManager))
 #define EXOGENESIS_HD_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EXOGENESIS_TYPE_HD_MANAGER, ExogenesisHDManagerClass))
@@ -120,6 +139,16 @@ typedef struct _ExogenesisHDManagerPrivate ExogenesisHDManagerPrivate;
 typedef struct _ExogenesisPreviousOS ExogenesisPreviousOS;
 typedef struct _ExogenesisPreviousOSClass ExogenesisPreviousOSClass;
 #define _g_error_free0(var) ((var == NULL) ? NULL : (var = (g_error_free (var), NULL)))
+
+#define EXOGENESIS_TYPE_MOUNT_POINTS (exogenesis_mount_points_get_type ())
+#define EXOGENESIS_MOUNT_POINTS(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EXOGENESIS_TYPE_MOUNT_POINTS, ExogenesisMountPoints))
+#define EXOGENESIS_MOUNT_POINTS_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EXOGENESIS_TYPE_MOUNT_POINTS, ExogenesisMountPointsClass))
+#define EXOGENESIS_IS_MOUNT_POINTS(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EXOGENESIS_TYPE_MOUNT_POINTS))
+#define EXOGENESIS_IS_MOUNT_POINTS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EXOGENESIS_TYPE_MOUNT_POINTS))
+#define EXOGENESIS_MOUNT_POINTS_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EXOGENESIS_TYPE_MOUNT_POINTS, ExogenesisMountPointsClass))
+
+typedef struct _ExogenesisMountPoints ExogenesisMountPoints;
+typedef struct _ExogenesisMountPointsClass ExogenesisMountPointsClass;
 #define _g_list_free0(var) ((var == NULL) ? NULL : (var = (g_list_free (var), NULL)))
 #define _gtk_tree_path_free0(var) ((var == NULL) ? NULL : (var = (gtk_tree_path_free (var), NULL)))
 
@@ -193,6 +222,8 @@ struct _ExogenesisFHDConfigAdvancedPrivate {
 	GtkListStore* _lstDisks;
 	GtkTreeStore* _lstPartitions;
 	GtkTreeStore* _lstNewPartitions;
+	GtkListStore* _lstPartTypes;
+	GtkListStore* _lstMountPoints;
 };
 
 typedef enum  {
@@ -213,13 +244,14 @@ typedef enum  {
 } ExogenesisFHDConfigAdvancedPartitionCols;
 
 typedef enum  {
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint = 0,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label,
-	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_HardDisk = 0,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint = 1,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType = 2,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize = 3,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag = 4,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag = 5,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label = 6,
+	EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove = 7
 } ExogenesisFHDConfigAdvancedTreeCols;
 
 struct _ExogenesisHDManager {
@@ -255,11 +287,14 @@ GType exogenesis_hard_disk_get_type (void) G_GNUC_CONST;
 GType exogenesis_partition_info_get_type (void) G_GNUC_CONST;
 GType exogenesis_install_hard_disk_get_type (void) G_GNUC_CONST;
 GType exogenesis_install_partition_get_type (void) G_GNUC_CONST;
+GType exogenesis_filesystem_type_get_type (void) G_GNUC_CONST;
+GType exogenesis_mount_point_get_type (void) G_GNUC_CONST;
 ExogenesisFHDConfigAdvanced* exogenesis_fhd_config_advanced_new (void);
 ExogenesisFHDConfigAdvanced* exogenesis_fhd_config_advanced_construct (GType object_type);
-static void exogenesis_fhd_config_advanced_Build (ExogenesisFHDConfigAdvanced* self);
+static void exogenesis_fhd_config_advanced_GetMountPoints (ExogenesisFHDConfigAdvanced* self);
 static void exogenesis_fhd_config_advanced_GetDiskInfo (ExogenesisFHDConfigAdvanced* self);
 static void exogenesis_fhd_config_advanced_CopyOldSchemaToNew (ExogenesisFHDConfigAdvanced* self);
+static void exogenesis_fhd_config_advanced_Build (ExogenesisFHDConfigAdvanced* self);
 gpointer exogenesis_hd_manager_ref (gpointer instance);
 void exogenesis_hd_manager_unref (gpointer instance);
 GParamSpec* exogenesis_param_spec_hd_manager (const gchar* name, const gchar* nick, const gchar* blurb, GType object_type, GParamFlags flags);
@@ -280,8 +315,6 @@ void exogenesis_fhd_config_advanced_OnRdoAfter_Click (ExogenesisFHDConfigAdvance
 static void _exogenesis_fhd_config_advanced_OnRdoAfter_Click_gtk_button_clicked (GtkButton* _sender, gpointer self);
 void exogenesis_fhd_config_advanced_OnRdoBefore_Click (ExogenesisFHDConfigAdvanced* self);
 static void _exogenesis_fhd_config_advanced_OnRdoBefore_Click_gtk_button_clicked (GtkButton* _sender, gpointer self);
-gboolean exogenesis_fhd_config_advanced_TrvHDALayout_RowClick (ExogenesisFHDConfigAdvanced* self, GdkEventButton* evt);
-static gboolean _exogenesis_fhd_config_advanced_TrvHDALayout_RowClick_gtk_widget_button_release_event (GtkWidget* _sender, GdkEventButton* event, gpointer self);
 static void exogenesis_fhd_config_advanced_OnRealized (ExogenesisFHDConfigAdvanced* self);
 static void _exogenesis_fhd_config_advanced_OnRealized_gtk_widget_realize (GtkWidget* _sender, gpointer self);
 void exogenesis_fhd_config_advanced_OnBtnCreatePartition_Click (ExogenesisFHDConfigAdvanced* self);
@@ -301,6 +334,10 @@ void exogenesis_value_take_previous_os (GValue* value, gpointer v_object);
 gpointer exogenesis_value_get_previous_os (const GValue* value);
 GType exogenesis_previous_os_get_type (void) G_GNUC_CONST;
 void exogenesis_previous_os_GetFSTabMountPoints (ExogenesisPreviousOS* self);
+GType exogenesis_mount_points_get_type (void) G_GNUC_CONST;
+ExogenesisMountPoints* exogenesis_hd_manager_GetMountPoints (ExogenesisHDManager* self);
+const gchar* exogenesis_mount_point_get_Key (ExogenesisMountPoint* self);
+const gchar* exogenesis_mount_point_get_Path (ExogenesisMountPoint* self);
 static void _lambda0_ (GtkCellRendererToggle* toggle, const gchar* path, ExogenesisFHDConfigAdvanced* self);
 static void __lambda0__gtk_cell_renderer_toggle_toggled (GtkCellRendererToggle* _sender, const gchar* path, gpointer self);
 static void _lambda1_ (GtkCellRendererToggle* toggle, const gchar* path, ExogenesisFHDConfigAdvanced* self);
@@ -312,8 +349,6 @@ void exogenesis_fhd_config_advanced_OnCellDelClicked (ExogenesisFHDConfigAdvance
 static void _exogenesis_fhd_config_advanced_OnCellDelClicked_exogenesis_cell_renderer_button_clicked (ExogenesisCellRendererButton* _sender, const gchar* path, gpointer self);
 GType exogenesis_install_data_get_type (void) G_GNUC_CONST;
 void exogenesis_install_data_ClearInstallDisks (ExogenesisInstallData* self);
-const gchar* exogenesis_hard_disk_get_Model (ExogenesisHardDisk* self);
-guint64 exogenesis_hard_disk_get_StartSector (ExogenesisHardDisk* self);
 ExogenesisInstallHardDisk* exogenesis_install_hard_disk_new (void);
 ExogenesisInstallHardDisk* exogenesis_install_hard_disk_construct (GType object_type);
 const gchar* exogenesis_hard_disk_get_SerialNumber (ExogenesisHardDisk* self);
@@ -322,16 +357,20 @@ const gchar* exogenesis_hard_disk_get_Device (ExogenesisHardDisk* self);
 void exogenesis_install_hard_disk_set_DeviceName (ExogenesisInstallHardDisk* self, const gchar* value);
 guint64 exogenesis_hard_disk_get_Capacity (ExogenesisHardDisk* self);
 void exogenesis_install_hard_disk_set_DriveSize (ExogenesisInstallHardDisk* self, guint64 value);
+const gchar* exogenesis_hard_disk_get_Model (ExogenesisHardDisk* self);
 void exogenesis_install_hard_disk_set_Model (ExogenesisInstallHardDisk* self, const gchar* value);
+guint64 exogenesis_hard_disk_get_StartSector (ExogenesisHardDisk* self);
+void exogenesis_install_hard_disk_set_StartSector (ExogenesisInstallHardDisk* self, guint64 value);
 const gchar* exogenesis_partition_info_get_PartitionType (ExogenesisPartitionInfo* self);
 ExogenesisInstallPartition* exogenesis_install_partition_new (void);
 ExogenesisInstallPartition* exogenesis_install_partition_construct (GType object_type);
 guint64 exogenesis_partition_info_get_Capacity (ExogenesisPartitionInfo* self);
 void exogenesis_install_partition_set_ByteSize (ExogenesisInstallPartition* self, guint64 value);
+const gchar* exogenesis_partition_info_get_Device (ExogenesisPartitionInfo* self);
+void exogenesis_install_partition_set_Device (ExogenesisInstallPartition* self, const gchar* value);
 const gchar* exogenesis_partition_info_get_CapacityDescription (ExogenesisPartitionInfo* self);
 void exogenesis_install_partition_set_DisplaySize (ExogenesisInstallPartition* self, const gchar* value);
 void exogenesis_install_partition_set_Type (ExogenesisInstallPartition* self, const gchar* value);
-const gchar* exogenesis_partition_info_get_FSTabMountPoint (ExogenesisPartitionInfo* self);
 void exogenesis_install_partition_set_MountPoint (ExogenesisInstallPartition* self, const gchar* value);
 guint64 exogenesis_partition_info_get_StartSector (ExogenesisPartitionInfo* self);
 void exogenesis_install_partition_set_Start (ExogenesisInstallPartition* self, guint64 value);
@@ -346,27 +385,23 @@ static ExogenesisInstallPartition* exogenesis_fhd_config_advanced_CopyPartition 
 void exogenesis_install_hard_disk_AddPartition (ExogenesisInstallHardDisk* self, ExogenesisInstallPartition* partition);
 void exogenesis_install_data_AddInstallDisk (ExogenesisInstallData* self, ExogenesisInstallHardDisk* hd);
 void exogenesis_install_partition_set_Use (ExogenesisInstallPartition* self, gboolean value);
+const gchar* exogenesis_partition_info_get_FSTabMountPoint (ExogenesisPartitionInfo* self);
 const gchar* exogenesis_partition_info_get_OSType (ExogenesisPartitionInfo* self);
 const gchar* exogenesis_partition_info_get_Label (ExogenesisPartitionInfo* self);
 void exogenesis_install_partition_set_Label (ExogenesisInstallPartition* self, const gchar* value);
-const gchar* exogenesis_partition_info_get_Device (ExogenesisPartitionInfo* self);
-void exogenesis_install_partition_set_Device (ExogenesisInstallPartition* self, const gchar* value);
 static void exogenesis_fhd_config_advanced_ModelFromNewLayout (ExogenesisFHDConfigAdvanced* self);
 static ExogenesisHardDisk* exogenesis_fhd_config_advanced_GetSelectedHD (ExogenesisFHDConfigAdvanced* self);
 gint exogenesis_install_data_get_HardDiskCount (ExogenesisInstallData* self);
 const gchar* exogenesis_install_hard_disk_get_Model (ExogenesisInstallHardDisk* self);
+const gchar* exogenesis_install_partition_get_Type (ExogenesisInstallPartition* self);
 static void exogenesis_fhd_config_advanced_PopulateListItemNew (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter, const gchar* mountpoint, const gchar* ostype, ExogenesisInstallHardDisk* hd, const gchar* label, gboolean format, gboolean use, const gchar* icon, guint64 size, const gchar* ostypeid, const gchar* device, const gchar* partitionid, gboolean newpartition, ExogenesisInstallPartition* p);
 const gchar* exogenesis_install_partition_get_MountPoint (ExogenesisInstallPartition* self);
-const gchar* exogenesis_install_partition_get_Type (ExogenesisInstallPartition* self);
 const gchar* exogenesis_install_partition_get_Label (ExogenesisInstallPartition* self);
-gboolean exogenesis_install_partition_get_Format (ExogenesisInstallPartition* self);
-gboolean exogenesis_install_partition_get_Use (ExogenesisInstallPartition* self);
 guint64 exogenesis_install_partition_get_ByteSize (ExogenesisInstallPartition* self);
 const gchar* exogenesis_install_partition_get_TypeID (ExogenesisInstallPartition* self);
 const gchar* exogenesis_install_partition_get_Device (ExogenesisInstallPartition* self);
-gboolean exogenesis_install_partition_get_NewPartition (ExogenesisInstallPartition* self);
-const gchar* exogenesis_install_hard_disk_get_SerialNumber (ExogenesisInstallHardDisk* self);
 static void exogenesis_fhd_config_advanced_UpdateSegbarNew (ExogenesisFHDConfigAdvanced* self, ExogenesisInstallHardDisk* hd, ExogenesisInstallPartition* pi, gint PartCount);
+const gchar* exogenesis_install_hard_disk_get_SerialNumber (ExogenesisInstallHardDisk* self);
 gchar* exogenesis_general_functions_FormatHDSize (guint64 size);
 static void exogenesis_fhd_config_advanced_ModelFromCurrentLayout (ExogenesisFHDConfigAdvanced* self);
 static void exogenesis_fhd_config_advanced_PopulateListItemCurrent (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter, const gchar* mountpoint, const gchar* ostype, ExogenesisHardDisk* hd, const gchar* label, gboolean format, gboolean use, const gchar* icon, guint64 size, const gchar* ostypeid, const gchar* device, const gchar* partitionid, gboolean newpartition, ExogenesisPartitionInfo* p);
@@ -385,19 +420,18 @@ static gboolean exogenesis_fhd_config_advanced_HardDiskExists (ExogenesisFHDConf
 static guint64 exogenesis_fhd_config_advanced_AvailablePartSize (ExogenesisFHDConfigAdvanced* self, ExogenesisInstallHardDisk* hd);
 static void exogenesis_fhd_config_advanced_HDDisplayAfter (ExogenesisFHDConfigAdvanced* self, ExogenesisInstallHardDisk* hd);
 void segmented_bar_RemoveAllSegments (SegmentedBar* self);
-static void exogenesis_fhd_config_advanced_PopulateFromExisting (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter, gint idx, ExogenesisHardDisk* hd);
 static void exogenesis_fhd_config_advanced_AddInstallPartitions (ExogenesisFHDConfigAdvanced* self);
 static gboolean exogenesis_fhd_config_advanced_IsAllocated (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* i);
 static ExogenesisInstallPartition* exogenesis_fhd_config_advanced_PopulateInstallPartition (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter, guint64 start);
 guint64 exogenesis_install_partition_get_Start (ExogenesisInstallPartition* self);
 static void exogenesis_fhd_config_advanced_DebugTree (ExogenesisFHDConfigAdvanced* self);
 void exogenesis_general_functions_LogIt (const gchar* Message);
-static void exogenesis_fhd_config_advanced_GetSelectedPartition (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* result);
 const gchar* exogenesis_install_hard_disk_get_DeviceName (ExogenesisInstallHardDisk* self);
 static void exogenesis_fhd_config_advanced_RecalcUnallocated (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter);
 void exogenesis_fhd_config_advanced_OnBtnApply_Click (ExogenesisFHDConfigAdvanced* self);
 GType exogenesis_fcreate_partition_get_type (void) G_GNUC_CONST;
 guint64 exogenesis_install_hard_disk_AvailableSize (ExogenesisInstallHardDisk* self);
+guint64 exogenesis_install_hard_disk_get_StartSector (ExogenesisInstallHardDisk* self);
 ExogenesisFCreatePartition* exogenesis_fcreate_partition_new (ExogenesisInstallHardDisk* hd, guint64 availablesize, ExogenesisFHDConfigAdvanced* owner);
 ExogenesisFCreatePartition* exogenesis_fcreate_partition_construct (GType object_type, ExogenesisInstallHardDisk* hd, guint64 availablesize, ExogenesisFHDConfigAdvanced* owner);
 void exogenesis_general_functions_ShowWindow (GtkBox* layout, const gchar* Title, gboolean Modal);
@@ -420,7 +454,7 @@ static GType exogenesis_fhd_config_advanced_partition_cols_get_type (void) {
 static GType exogenesis_fhd_config_advanced_tree_cols_get_type (void) {
 	static volatile gsize exogenesis_fhd_config_advanced_tree_cols_type_id__volatile = 0;
 	if (g_once_init_enter (&exogenesis_fhd_config_advanced_tree_cols_type_id__volatile)) {
-		static const GEnumValue values[] = {{EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint", "mountpoint"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize", "displaysize"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType", "formattype"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag", "formatflag"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag", "useflag"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label", "label"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove", "remove"}, {0, NULL, NULL}};
+		static const GEnumValue values[] = {{EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_HardDisk, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_HardDisk", "harddisk"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_MountPoint", "mountpoint"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatType", "formattype"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_DisplaySize", "displaysize"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_FormatFlag", "formatflag"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_UseFlag", "useflag"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Label", "label"}, {EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove, "EXOGENESIS_FHD_CONFIG_ADVANCED_TREE_COLS_Remove", "remove"}, {0, NULL, NULL}};
 		GType exogenesis_fhd_config_advanced_tree_cols_type_id;
 		exogenesis_fhd_config_advanced_tree_cols_type_id = g_enum_register_static ("ExogenesisFHDConfigAdvancedTreeCols", values);
 		g_once_init_leave (&exogenesis_fhd_config_advanced_tree_cols_type_id__volatile, exogenesis_fhd_config_advanced_tree_cols_type_id);
@@ -433,9 +467,10 @@ ExogenesisFHDConfigAdvanced* exogenesis_fhd_config_advanced_construct (GType obj
 	ExogenesisFHDConfigAdvanced * self = NULL;
 	gint _tmp0_;
 	self = (ExogenesisFHDConfigAdvanced*) g_object_new (object_type, NULL);
-	exogenesis_fhd_config_advanced_Build (self);
+	exogenesis_fhd_config_advanced_GetMountPoints (self);
 	exogenesis_fhd_config_advanced_GetDiskInfo (self);
 	exogenesis_fhd_config_advanced_CopyOldSchemaToNew (self);
+	exogenesis_fhd_config_advanced_Build (self);
 	_tmp0_ = exogenesis_hd_manager_get_HardDiskCount (exogenesis_gHDManager);
 	if (_tmp0_ > 0) {
 		gpointer _tmp1_ = NULL;
@@ -487,13 +522,6 @@ static void _exogenesis_fhd_config_advanced_OnRdoAfter_Click_gtk_button_clicked 
 
 static void _exogenesis_fhd_config_advanced_OnRdoBefore_Click_gtk_button_clicked (GtkButton* _sender, gpointer self) {
 	exogenesis_fhd_config_advanced_OnRdoBefore_Click (self);
-}
-
-
-static gboolean _exogenesis_fhd_config_advanced_TrvHDALayout_RowClick_gtk_widget_button_release_event (GtkWidget* _sender, GdkEventButton* event, gpointer self) {
-	gboolean result;
-	result = exogenesis_fhd_config_advanced_TrvHDALayout_RowClick (self, event);
-	return result;
 }
 
 
@@ -695,7 +723,6 @@ static void exogenesis_fhd_config_advanced_Build (ExogenesisFHDConfigAdvanced* s
 	g_signal_connect_object (self->priv->cboHDADrives, "changed", (GCallback) _exogenesis_fhd_config_advanced_OnCboHD_Changed_gtk_combo_box_changed, self, 0);
 	g_signal_connect_object ((GtkButton*) self->priv->rdoHDAfter, "clicked", (GCallback) _exogenesis_fhd_config_advanced_OnRdoAfter_Click_gtk_button_clicked, self, 0);
 	g_signal_connect_object ((GtkButton*) self->priv->rdoHDBefore, "clicked", (GCallback) _exogenesis_fhd_config_advanced_OnRdoBefore_Click_gtk_button_clicked, self, 0);
-	g_signal_connect_object ((GtkWidget*) self->priv->trvHDALayout, "button-release-event", (GCallback) _exogenesis_fhd_config_advanced_TrvHDALayout_RowClick_gtk_widget_button_release_event, self, 0);
 	g_signal_connect_object ((GtkWidget*) self, "realize", (GCallback) _exogenesis_fhd_config_advanced_OnRealized_gtk_widget_realize, self, 0);
 	g_signal_connect_object (self->priv->btnHDAAddPartition, "clicked", (GCallback) _exogenesis_fhd_config_advanced_OnBtnCreatePartition_Click_gtk_button_clicked, self, 0);
 	_tmp56_ = segmented_bar_new ();
@@ -710,6 +737,7 @@ static void exogenesis_fhd_config_advanced_Build (ExogenesisFHDConfigAdvanced* s
 	exogenesis_fhd_config_advanced_SetTreeColumns (self);
 	gtk_toggle_button_set_active ((GtkToggleButton*) self->priv->rdoHDBefore, TRUE);
 	exogenesis_previous_os_GetFSTabMountPoints (exogenesis_gPreviousOS);
+	gtk_tree_view_set_model (self->priv->trvHDALayout, (GtkTreeModel*) self->priv->_lstPartitions);
 	gtk_widget_show_all ((GtkWidget*) self);
 	_g_object_unref0 (cellHD);
 	_g_object_unref0 (builder);
@@ -744,6 +772,64 @@ static void exogenesis_fhd_config_advanced_Build (ExogenesisFHDConfigAdvanced* s
 }
 
 
+static void exogenesis_fhd_config_advanced_GetMountPoints (ExogenesisFHDConfigAdvanced* self) {
+	GtkTreeIter iter = {0};
+	g_return_if_fail (self != NULL);
+	gtk_list_store_clear (self->priv->_lstMountPoints);
+	{
+		ExogenesisMountPoints* _tmp0_ = NULL;
+		ExogenesisMountPoints* _tmp1_;
+		GeeIterator* _tmp2_ = NULL;
+		GeeIterator* _tmp3_;
+		GeeIterator* _mp_it;
+		_tmp0_ = exogenesis_hd_manager_GetMountPoints (exogenesis_gHDManager);
+		_tmp1_ = _tmp0_;
+		_tmp2_ = gee_iterable_iterator ((GeeIterable*) _tmp1_);
+		_tmp3_ = _tmp2_;
+		_g_object_unref0 (_tmp1_);
+		_mp_it = _tmp3_;
+		while (TRUE) {
+			gboolean _tmp4_;
+			gpointer _tmp5_ = NULL;
+			ExogenesisMountPoint* mp;
+			gchar* sDisplay = NULL;
+			const gchar* _tmp6_ = NULL;
+			GtkTreeIter _tmp12_ = {0};
+			_tmp4_ = gee_iterator_next (_mp_it);
+			if (!_tmp4_) {
+				break;
+			}
+			_tmp5_ = gee_iterator_get (_mp_it);
+			mp = (ExogenesisMountPoint*) _tmp5_;
+			_tmp6_ = exogenesis_mount_point_get_Key (mp);
+			if (g_strcmp0 (_tmp6_, "none") != 0) {
+				const gchar* _tmp7_ = NULL;
+				const gchar* _tmp8_ = NULL;
+				gchar* _tmp9_ = NULL;
+				_tmp7_ = exogenesis_mount_point_get_Key (mp);
+				_tmp8_ = exogenesis_mount_point_get_Path (mp);
+				_tmp9_ = g_strdup_printf ("%s - %s", _tmp7_, _tmp8_);
+				_g_free0 (sDisplay);
+				sDisplay = _tmp9_;
+			} else {
+				const gchar* _tmp10_ = NULL;
+				gchar* _tmp11_ = NULL;
+				_tmp10_ = exogenesis_mount_point_get_Key (mp);
+				_tmp11_ = g_strdup_printf ("%s", _tmp10_);
+				_g_free0 (sDisplay);
+				sDisplay = _tmp11_;
+			}
+			gtk_list_store_append (self->priv->_lstMountPoints, &_tmp12_);
+			iter = _tmp12_;
+			gtk_list_store_set (self->priv->_lstMountPoints, &iter, 0, sDisplay, 1, mp, -1);
+			_g_free0 (sDisplay);
+			_g_object_unref0 (mp);
+		}
+		_g_object_unref0 (_mp_it);
+	}
+}
+
+
 static void _lambda0_ (GtkCellRendererToggle* toggle, const gchar* path, ExogenesisFHDConfigAdvanced* self) {
 	GtkTreePath* _tmp0_ = NULL;
 	GtkTreePath* tree_path;
@@ -754,10 +840,10 @@ static void _lambda0_ (GtkCellRendererToggle* toggle, const gchar* path, Exogene
 	g_return_if_fail (path != NULL);
 	_tmp0_ = gtk_tree_path_new_from_string (path);
 	tree_path = _tmp0_;
-	gtk_tree_model_get_iter ((GtkTreeModel*) self->priv->_lstPartitions, &_tmp1_, tree_path);
+	gtk_tree_model_get_iter ((GtkTreeModel*) self->priv->_lstNewPartitions, &_tmp1_, tree_path);
 	iter = _tmp1_;
 	_tmp2_ = gtk_cell_renderer_toggle_get_active (toggle);
-	gtk_tree_store_set (self->priv->_lstPartitions, &iter, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatFlag, !_tmp2_, -1);
+	gtk_tree_store_set (self->priv->_lstNewPartitions, &iter, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatFlag, !_tmp2_, -1, -1);
 	_gtk_tree_path_free0 (tree_path);
 }
 
@@ -777,10 +863,10 @@ static void _lambda1_ (GtkCellRendererToggle* toggle, const gchar* path, Exogene
 	g_return_if_fail (path != NULL);
 	_tmp0_ = gtk_tree_path_new_from_string (path);
 	tree_path = _tmp0_;
-	gtk_tree_model_get_iter ((GtkTreeModel*) self->priv->_lstPartitions, &_tmp1_, tree_path);
+	gtk_tree_model_get_iter ((GtkTreeModel*) self->priv->_lstNewPartitions, &_tmp1_, tree_path);
 	iter = _tmp1_;
 	_tmp2_ = gtk_cell_renderer_toggle_get_active (toggle);
-	gtk_tree_store_set (self->priv->_lstPartitions, &iter, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_UseFlag, !_tmp2_, -1);
+	gtk_tree_store_set (self->priv->_lstNewPartitions, &iter, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_UseFlag, !_tmp2_, -1, -1);
 	_gtk_tree_path_free0 (tree_path);
 }
 
@@ -797,15 +883,12 @@ static void _exogenesis_fhd_config_advanced_OnCellDelClicked_exogenesis_cell_ren
 
 static void exogenesis_fhd_config_advanced_SetTreeColumns (ExogenesisFHDConfigAdvanced* self) {
 	GList* _tmp0_ = NULL;
-	GtkCellRendererText* _tmp2_ = NULL;
-	GtkCellRendererText* _tmp3_;
-	GtkCellRendererText* _tmp4_ = NULL;
-	GtkCellRendererText* _tmp5_;
-	GtkCellRendererText* _tmp6_ = NULL;
-	GtkCellRendererText* _tmp7_;
-	GtkCellRendererText* _tmp8_ = NULL;
-	GtkCellRendererText* _tmp9_;
-	gboolean _tmp10_;
+	gboolean _tmp2_;
+	GtkCellRendererText* _tmp7_ = NULL;
+	GtkCellRendererText* _tmp8_;
+	GtkCellRendererText* _tmp9_ = NULL;
+	GtkCellRendererText* _tmp10_;
+	gboolean _tmp11_;
 	g_return_if_fail (self != NULL);
 	_tmp0_ = gtk_tree_view_get_columns (self->priv->trvHDALayout);
 	{
@@ -824,47 +907,71 @@ static void exogenesis_fhd_config_advanced_SetTreeColumns (ExogenesisFHDConfigAd
 		}
 		_g_list_free0 (tvc_collection);
 	}
-	_tmp2_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
-	_tmp3_ = g_object_ref_sink (_tmp2_);
-	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Mount Point", (GtkCellRenderer*) _tmp3_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_MountPoint, NULL, NULL);
-	_g_object_unref0 (_tmp3_);
-	_tmp4_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
-	_tmp5_ = g_object_ref_sink (_tmp4_);
-	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Size", (GtkCellRenderer*) _tmp5_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_DisplaySize, NULL, NULL);
-	_g_object_unref0 (_tmp5_);
-	_tmp6_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
-	_tmp7_ = g_object_ref_sink (_tmp6_);
-	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Type", (GtkCellRenderer*) _tmp7_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatType, NULL, NULL);
-	_g_object_unref0 (_tmp7_);
-	_tmp8_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
-	_tmp9_ = g_object_ref_sink (_tmp8_);
-	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Label", (GtkCellRenderer*) _tmp9_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_Label, NULL, NULL);
-	_g_object_unref0 (_tmp9_);
-	_tmp10_ = gtk_toggle_button_get_active ((GtkToggleButton*) self->priv->rdoHDAfter);
-	if (_tmp10_) {
-		GtkCellRendererToggle* _tmp11_ = NULL;
+	_tmp2_ = gtk_toggle_button_get_active ((GtkToggleButton*) self->priv->rdoHDBefore);
+	if (_tmp2_) {
+		GtkCellRendererText* _tmp3_ = NULL;
+		GtkCellRendererText* _tmp4_;
+		GtkCellRendererText* _tmp5_ = NULL;
+		GtkCellRendererText* _tmp6_;
+		_tmp3_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
+		_tmp4_ = g_object_ref_sink (_tmp3_);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 0, "Mount Point", (GtkCellRenderer*) _tmp4_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_MountPoint, NULL, NULL);
+		_g_object_unref0 (_tmp4_);
+		_tmp5_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
+		_tmp6_ = g_object_ref_sink (_tmp5_);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 1, "Type", (GtkCellRenderer*) _tmp6_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatType, NULL, NULL);
+		_g_object_unref0 (_tmp6_);
+	}
+	_tmp7_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
+	_tmp8_ = g_object_ref_sink (_tmp7_);
+	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 2, "Size", (GtkCellRenderer*) _tmp8_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_DisplaySize, NULL, NULL);
+	_g_object_unref0 (_tmp8_);
+	_tmp9_ = (GtkCellRendererText*) gtk_cell_renderer_text_new ();
+	_tmp10_ = g_object_ref_sink (_tmp9_);
+	gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 3, "Label", (GtkCellRenderer*) _tmp10_, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_Label, NULL, NULL);
+	_g_object_unref0 (_tmp10_);
+	_tmp11_ = gtk_toggle_button_get_active ((GtkToggleButton*) self->priv->rdoHDAfter);
+	if (_tmp11_) {
+		GtkCellRendererCombo* _tmp12_ = NULL;
+		GtkCellRendererCombo* cboMountPoints;
+		GtkCellRendererCombo* _tmp13_ = NULL;
+		GtkCellRendererCombo* cboFileTypes;
+		GtkCellRendererToggle* _tmp14_ = NULL;
 		GtkCellRendererToggle* togCellF;
-		GtkCellRendererToggle* _tmp12_ = NULL;
+		GtkCellRendererToggle* _tmp15_ = NULL;
 		GtkCellRendererToggle* togCellU;
-		ExogenesisCellRendererButton* _tmp13_ = NULL;
+		ExogenesisCellRendererButton* _tmp16_ = NULL;
 		ExogenesisCellRendererButton* cellButtonDel;
-		_tmp11_ = (GtkCellRendererToggle*) gtk_cell_renderer_toggle_new ();
-		togCellF = g_object_ref_sink (_tmp11_);
+		_tmp12_ = (GtkCellRendererCombo*) gtk_cell_renderer_combo_new ();
+		cboMountPoints = g_object_ref_sink (_tmp12_);
+		g_object_set (cboMountPoints, "text-column", 0, NULL);
+		g_object_set (cboMountPoints, "model", (GtkTreeModel*) self->priv->_lstMountPoints, NULL);
+		g_object_set ((GtkCellRenderer*) cboMountPoints, "mode", GTK_CELL_RENDERER_MODE_ACTIVATABLE, NULL);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 0, "Mount Point", (GtkCellRenderer*) cboMountPoints, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_MountPoint, NULL, NULL);
+		_tmp13_ = (GtkCellRendererCombo*) gtk_cell_renderer_combo_new ();
+		cboFileTypes = g_object_ref_sink (_tmp13_);
+		g_object_set (cboFileTypes, "model", (GtkTreeModel*) self->priv->_lstPartTypes, NULL);
+		g_object_set ((GtkCellRenderer*) cboFileTypes, "mode", GTK_CELL_RENDERER_MODE_ACTIVATABLE, NULL);
+		g_object_set (cboFileTypes, "text-column", 0, NULL);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 1, "Type", (GtkCellRenderer*) cboFileTypes, "text", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatType, NULL, NULL);
+		_tmp14_ = (GtkCellRendererToggle*) gtk_cell_renderer_toggle_new ();
+		togCellF = g_object_ref_sink (_tmp14_);
 		g_signal_connect_object (togCellF, "toggled", (GCallback) __lambda0__gtk_cell_renderer_toggle_toggled, self, 0);
-		_tmp12_ = (GtkCellRendererToggle*) gtk_cell_renderer_toggle_new ();
-		togCellU = g_object_ref_sink (_tmp12_);
+		_tmp15_ = (GtkCellRendererToggle*) gtk_cell_renderer_toggle_new ();
+		togCellU = g_object_ref_sink (_tmp15_);
 		g_signal_connect_object (togCellU, "toggled", (GCallback) __lambda1__gtk_cell_renderer_toggle_toggled, self, 0);
-		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Format", (GtkCellRenderer*) togCellF, "active", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatFlag, NULL, NULL);
-		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Use", (GtkCellRenderer*) togCellU, "active", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_UseFlag, NULL, NULL);
-		_tmp13_ = exogenesis_cell_renderer_button_new ();
-		cellButtonDel = g_object_ref_sink (_tmp13_);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 4, "Format", (GtkCellRenderer*) togCellF, "active", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatFlag, NULL, NULL);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 5, "Use", (GtkCellRenderer*) togCellU, "active", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_UseFlag, NULL, NULL);
+		_tmp16_ = exogenesis_cell_renderer_button_new ();
+		cellButtonDel = g_object_ref_sink (_tmp16_);
 		g_signal_connect_object (cellButtonDel, "clicked", (GCallback) _exogenesis_fhd_config_advanced_OnCellDelClicked_exogenesis_cell_renderer_button_clicked, self, 0);
-		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, -1, "Delete", (GtkCellRenderer*) cellButtonDel, "stockicon", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_RemoveIcon, NULL, NULL);
+		gtk_tree_view_insert_column_with_attributes (self->priv->trvHDALayout, 6, "Delete", (GtkCellRenderer*) cellButtonDel, "stockicon", EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_RemoveIcon, NULL, NULL);
 		_g_object_unref0 (cellButtonDel);
 		_g_object_unref0 (togCellU);
 		_g_object_unref0 (togCellF);
+		_g_object_unref0 (cboFileTypes);
+		_g_object_unref0 (cboMountPoints);
 	}
-	gtk_tree_view_set_model (self->priv->trvHDALayout, (GtkTreeModel*) self->priv->_lstPartitions);
 }
 
 
@@ -897,122 +1004,116 @@ static void exogenesis_fhd_config_advanced_CopyOldSchemaToNew (ExogenesisFHDConf
 		while (TRUE) {
 			gpointer _tmp2_ = NULL;
 			ExogenesisHardDisk* hd;
-			const gchar* _tmp3_ = NULL;
-			guint64 _tmp4_;
-			gchar* _tmp5_ = NULL;
-			gchar* _tmp6_;
-			ExogenesisInstallHardDisk* _tmp7_ = NULL;
+			ExogenesisInstallHardDisk* _tmp3_ = NULL;
 			ExogenesisInstallHardDisk* ihd;
-			const gchar* _tmp8_ = NULL;
-			const gchar* _tmp9_ = NULL;
-			guint64 _tmp10_;
-			const gchar* _tmp11_ = NULL;
+			const gchar* _tmp4_ = NULL;
+			const gchar* _tmp5_ = NULL;
+			guint64 _tmp6_;
+			const gchar* _tmp7_ = NULL;
+			guint64 _tmp8_;
 			_hd_index = _hd_index + 1;
 			if (!(_hd_index < _hd_size)) {
 				break;
 			}
 			_tmp2_ = gee_abstract_list_get ((GeeAbstractList*) _hd_list, _hd_index);
 			hd = (ExogenesisHardDisk*) _tmp2_;
-			_tmp3_ = exogenesis_hard_disk_get_Model (hd);
-			_tmp4_ = exogenesis_hard_disk_get_StartSector (hd);
-			_tmp5_ = g_strdup_printf ("%" G_GUINT64_FORMAT, _tmp4_);
-			_tmp6_ = _tmp5_;
-			fprintf (stdout, "START SECTOR %s = %s\n", _tmp3_, _tmp6_);
-			_g_free0 (_tmp6_);
-			_tmp7_ = exogenesis_install_hard_disk_new ();
-			ihd = _tmp7_;
-			_tmp8_ = exogenesis_hard_disk_get_SerialNumber (hd);
-			exogenesis_install_hard_disk_set_SerialNumber (ihd, _tmp8_);
-			_tmp9_ = exogenesis_hard_disk_get_Device (hd);
-			exogenesis_install_hard_disk_set_DeviceName (ihd, _tmp9_);
-			_tmp10_ = exogenesis_hard_disk_get_Capacity (hd);
-			exogenesis_install_hard_disk_set_DriveSize (ihd, _tmp10_);
-			_tmp11_ = exogenesis_hard_disk_get_Model (hd);
-			exogenesis_install_hard_disk_set_Model (ihd, _tmp11_);
+			_tmp3_ = exogenesis_install_hard_disk_new ();
+			ihd = _tmp3_;
+			_tmp4_ = exogenesis_hard_disk_get_SerialNumber (hd);
+			exogenesis_install_hard_disk_set_SerialNumber (ihd, _tmp4_);
+			_tmp5_ = exogenesis_hard_disk_get_Device (hd);
+			exogenesis_install_hard_disk_set_DeviceName (ihd, _tmp5_);
+			_tmp6_ = exogenesis_hard_disk_get_Capacity (hd);
+			exogenesis_install_hard_disk_set_DriveSize (ihd, _tmp6_);
+			_tmp7_ = exogenesis_hard_disk_get_Model (hd);
+			exogenesis_install_hard_disk_set_Model (ihd, _tmp7_);
+			_tmp8_ = exogenesis_hard_disk_get_StartSector (hd);
+			exogenesis_install_hard_disk_set_StartSector (ihd, _tmp8_);
 			{
-				GeeIterator* _tmp12_ = NULL;
+				GeeIterator* _tmp9_ = NULL;
 				GeeIterator* _pi_it;
-				_tmp12_ = gee_iterable_iterator ((GeeIterable*) hd);
-				_pi_it = _tmp12_;
+				_tmp9_ = gee_iterable_iterator ((GeeIterable*) hd);
+				_pi_it = _tmp9_;
 				while (TRUE) {
-					gboolean _tmp13_;
-					gpointer _tmp14_ = NULL;
+					gboolean _tmp10_;
+					gpointer _tmp11_ = NULL;
 					ExogenesisPartitionInfo* pi;
-					const gchar* _tmp15_ = NULL;
-					gchar* _tmp16_ = NULL;
-					gchar* _tmp17_;
-					gboolean _tmp18_;
-					gboolean _tmp19_;
-					_tmp13_ = gee_iterator_next (_pi_it);
-					if (!_tmp13_) {
+					const gchar* _tmp12_ = NULL;
+					gchar* _tmp13_ = NULL;
+					gchar* _tmp14_;
+					gboolean _tmp15_;
+					gboolean _tmp16_;
+					_tmp10_ = gee_iterator_next (_pi_it);
+					if (!_tmp10_) {
 						break;
 					}
-					_tmp14_ = gee_iterator_get (_pi_it);
-					pi = (ExogenesisPartitionInfo*) _tmp14_;
-					_tmp15_ = exogenesis_partition_info_get_PartitionType (pi);
-					_tmp16_ = g_utf8_strdown (_tmp15_, (gssize) (-1));
-					_tmp17_ = _tmp16_;
-					_tmp18_ = string_contains (_tmp17_, "extended");
-					_tmp19_ = _tmp18_;
-					_g_free0 (_tmp17_);
-					if (_tmp19_) {
-						ExogenesisInstallPartition* _tmp20_ = NULL;
-						guint64 _tmp21_;
-						const gchar* _tmp22_ = NULL;
-						const gchar* _tmp23_ = NULL;
+					_tmp11_ = gee_iterator_get (_pi_it);
+					pi = (ExogenesisPartitionInfo*) _tmp11_;
+					_tmp12_ = exogenesis_partition_info_get_PartitionType (pi);
+					_tmp13_ = g_utf8_strdown (_tmp12_, (gssize) (-1));
+					_tmp14_ = _tmp13_;
+					_tmp15_ = string_contains (_tmp14_, "extended");
+					_tmp16_ = _tmp15_;
+					_g_free0 (_tmp14_);
+					if (_tmp16_) {
+						ExogenesisInstallPartition* _tmp17_ = NULL;
+						guint64 _tmp18_;
+						const gchar* _tmp19_ = NULL;
+						const gchar* _tmp20_ = NULL;
+						const gchar* _tmp21_ = NULL;
+						guint64 _tmp22_;
+						guint64 _tmp23_;
 						const gchar* _tmp24_ = NULL;
-						guint64 _tmp25_;
-						guint64 _tmp26_;
-						const gchar* _tmp27_ = NULL;
-						_tmp20_ = exogenesis_install_partition_new ();
+						_tmp17_ = exogenesis_install_partition_new ();
 						_g_object_unref0 (ip);
-						ip = _tmp20_;
-						_tmp21_ = exogenesis_partition_info_get_Capacity (pi);
-						exogenesis_install_partition_set_ByteSize (ip, _tmp21_);
-						_tmp22_ = exogenesis_partition_info_get_CapacityDescription (pi);
-						exogenesis_install_partition_set_DisplaySize (ip, _tmp22_);
-						_tmp23_ = exogenesis_partition_info_get_PartitionType (pi);
-						exogenesis_install_partition_set_Type (ip, _tmp23_);
-						_tmp24_ = exogenesis_partition_info_get_FSTabMountPoint (pi);
-						exogenesis_install_partition_set_MountPoint (ip, _tmp24_);
-						_tmp25_ = exogenesis_partition_info_get_StartSector (pi);
-						exogenesis_install_partition_set_Start (ip, _tmp25_);
-						_tmp26_ = exogenesis_partition_info_get_EndSector (pi);
-						exogenesis_install_partition_set_End (ip, _tmp26_);
-						_tmp27_ = exogenesis_partition_info_get_OSTypeID (pi);
-						exogenesis_install_partition_set_TypeID (ip, _tmp27_);
+						ip = _tmp17_;
+						_tmp18_ = exogenesis_partition_info_get_Capacity (pi);
+						exogenesis_install_partition_set_ByteSize (ip, _tmp18_);
+						_tmp19_ = exogenesis_partition_info_get_Device (pi);
+						exogenesis_install_partition_set_Device (ip, _tmp19_);
+						_tmp20_ = exogenesis_partition_info_get_CapacityDescription (pi);
+						exogenesis_install_partition_set_DisplaySize (ip, _tmp20_);
+						_tmp21_ = exogenesis_partition_info_get_PartitionType (pi);
+						exogenesis_install_partition_set_Type (ip, _tmp21_);
+						exogenesis_install_partition_set_MountPoint (ip, "");
+						_tmp22_ = exogenesis_partition_info_get_StartSector (pi);
+						exogenesis_install_partition_set_Start (ip, _tmp22_);
+						_tmp23_ = exogenesis_partition_info_get_EndSector (pi);
+						exogenesis_install_partition_set_End (ip, _tmp23_);
+						_tmp24_ = exogenesis_partition_info_get_OSTypeID (pi);
+						exogenesis_install_partition_set_TypeID (ip, _tmp24_);
 						exogenesis_install_partition_set_NewPartition (ip, FALSE);
 						exogenesis_install_partition_set_Format (ip, FALSE);
 						{
-							GeeIterator* _tmp28_ = NULL;
+							GeeIterator* _tmp25_ = NULL;
 							GeeIterator* _p_it;
-							_tmp28_ = gee_iterable_iterator ((GeeIterable*) pi);
-							_p_it = _tmp28_;
+							_tmp25_ = gee_iterable_iterator ((GeeIterable*) pi);
+							_p_it = _tmp25_;
 							while (TRUE) {
-								gboolean _tmp29_;
-								gpointer _tmp30_ = NULL;
+								gboolean _tmp26_;
+								gpointer _tmp27_ = NULL;
 								ExogenesisPartitionInfo* p;
-								ExogenesisInstallPartition* _tmp31_ = NULL;
-								ExogenesisInstallPartition* _tmp32_;
-								_tmp29_ = gee_iterator_next (_p_it);
-								if (!_tmp29_) {
+								ExogenesisInstallPartition* _tmp28_ = NULL;
+								ExogenesisInstallPartition* _tmp29_;
+								_tmp26_ = gee_iterator_next (_p_it);
+								if (!_tmp26_) {
 									break;
 								}
-								_tmp30_ = gee_iterator_get (_p_it);
-								p = (ExogenesisPartitionInfo*) _tmp30_;
-								_tmp31_ = exogenesis_fhd_config_advanced_CopyPartition (self, p);
-								_tmp32_ = _tmp31_;
-								exogenesis_install_partition_AddInstallPartition (ip, _tmp32_);
-								_g_object_unref0 (_tmp32_);
+								_tmp27_ = gee_iterator_get (_p_it);
+								p = (ExogenesisPartitionInfo*) _tmp27_;
+								_tmp28_ = exogenesis_fhd_config_advanced_CopyPartition (self, p);
+								_tmp29_ = _tmp28_;
+								exogenesis_install_partition_AddInstallPartition (ip, _tmp29_);
+								_g_object_unref0 (_tmp29_);
 								_g_object_unref0 (p);
 							}
 							_g_object_unref0 (_p_it);
 						}
 					} else {
-						ExogenesisInstallPartition* _tmp33_ = NULL;
-						_tmp33_ = exogenesis_fhd_config_advanced_CopyPartition (self, pi);
+						ExogenesisInstallPartition* _tmp30_ = NULL;
+						_tmp30_ = exogenesis_fhd_config_advanced_CopyPartition (self, pi);
 						_g_object_unref0 (ip);
-						ip = _tmp33_;
+						ip = _tmp30_;
 					}
 					exogenesis_install_hard_disk_AddPartition (ihd, ip);
 					_g_object_unref0 (pi);
@@ -1069,6 +1170,14 @@ static ExogenesisInstallPartition* exogenesis_fhd_config_advanced_CopyPartition 
 }
 
 
+static const gchar* string_to_string (const gchar* self) {
+	const gchar* result = NULL;
+	g_return_val_if_fail (self != NULL, NULL);
+	result = self;
+	return result;
+}
+
+
 static void exogenesis_fhd_config_advanced_ModelFromNewLayout (ExogenesisFHDConfigAdvanced* self) {
 	ExogenesisHardDisk* _tmp0_ = NULL;
 	ExogenesisHardDisk* selectedHD;
@@ -1113,21 +1222,11 @@ static void exogenesis_fhd_config_advanced_ModelFromNewLayout (ExogenesisFHDConf
 						ExogenesisInstallPartition* ip;
 						GtkTreeIter iterPart = {0};
 						gint PartCount;
-						GtkTreeIter _tmp10_ = {0};
-						const gchar* _tmp11_ = NULL;
-						const gchar* _tmp12_ = NULL;
-						const gchar* _tmp13_ = NULL;
+						const gchar* _tmp10_ = NULL;
+						gchar* _tmp11_ = NULL;
+						gchar* _tmp12_;
+						gboolean _tmp13_;
 						gboolean _tmp14_;
-						gboolean _tmp15_;
-						guint64 _tmp16_;
-						const gchar* _tmp17_ = NULL;
-						const gchar* _tmp18_ = NULL;
-						gboolean _tmp19_;
-						const gchar* _tmp20_ = NULL;
-						gchar* _tmp21_ = NULL;
-						gchar* _tmp22_;
-						gboolean _tmp23_;
-						gboolean _tmp24_;
 						_tmp8_ = gee_iterator_next (_ip_it);
 						if (!_tmp8_) {
 							break;
@@ -1135,82 +1234,102 @@ static void exogenesis_fhd_config_advanced_ModelFromNewLayout (ExogenesisFHDConf
 						_tmp9_ = gee_iterator_get (_ip_it);
 						ip = (ExogenesisInstallPartition*) _tmp9_;
 						PartCount = 0;
-						gtk_tree_store_append (self->priv->_lstNewPartitions, &_tmp10_, &iterDisk);
-						iterPart = _tmp10_;
-						_tmp11_ = exogenesis_install_partition_get_MountPoint (ip);
-						_tmp12_ = exogenesis_install_partition_get_Type (ip);
-						_tmp13_ = exogenesis_install_partition_get_Label (ip);
-						_tmp14_ = exogenesis_install_partition_get_Format (ip);
-						_tmp15_ = exogenesis_install_partition_get_Use (ip);
-						_tmp16_ = exogenesis_install_partition_get_ByteSize (ip);
-						_tmp17_ = exogenesis_install_partition_get_TypeID (ip);
-						_tmp18_ = exogenesis_install_partition_get_Device (ip);
-						_tmp19_ = exogenesis_install_partition_get_NewPartition (ip);
-						exogenesis_fhd_config_advanced_PopulateListItemNew (self, &iterPart, _tmp11_, _tmp12_, iHD, _tmp13_, _tmp14_, _tmp15_, "", _tmp16_, _tmp17_, _tmp18_, "", _tmp19_, ip);
-						_tmp20_ = exogenesis_install_partition_get_Type (ip);
-						_tmp21_ = g_utf8_strdown (_tmp20_, (gssize) (-1));
-						_tmp22_ = _tmp21_;
-						_tmp23_ = string_contains (_tmp22_, "extended");
-						_tmp24_ = !_tmp23_;
-						_g_free0 (_tmp22_);
-						if (_tmp24_) {
-							const gchar* _tmp25_ = NULL;
+						_tmp10_ = exogenesis_install_partition_get_Type (ip);
+						_tmp11_ = g_utf8_strdown (_tmp10_, (gssize) (-1));
+						_tmp12_ = _tmp11_;
+						_tmp13_ = string_contains (_tmp12_, "extended");
+						_tmp14_ = !_tmp13_;
+						_g_free0 (_tmp12_);
+						if (_tmp14_) {
+							GtkTreeIter _tmp15_ = {0};
+							const gchar* _tmp16_ = NULL;
+							const gchar* _tmp17_ = NULL;
+							const gchar* _tmp18_ = NULL;
+							guint64 _tmp19_;
+							const gchar* _tmp20_ = NULL;
+							const gchar* _tmp21_ = NULL;
+							gtk_tree_store_append (self->priv->_lstNewPartitions, &_tmp15_, &iterDisk);
+							iterPart = _tmp15_;
+							_tmp16_ = exogenesis_install_partition_get_MountPoint (ip);
+							_tmp17_ = exogenesis_install_partition_get_Type (ip);
+							_tmp18_ = exogenesis_install_partition_get_Label (ip);
+							_tmp19_ = exogenesis_install_partition_get_ByteSize (ip);
+							_tmp20_ = exogenesis_install_partition_get_TypeID (ip);
+							_tmp21_ = exogenesis_install_partition_get_Device (ip);
+							exogenesis_fhd_config_advanced_PopulateListItemNew (self, &iterPart, _tmp16_, _tmp17_, iHD, _tmp18_, FALSE, FALSE, "", _tmp19_, _tmp20_, _tmp21_, "", FALSE, ip);
+							exogenesis_fhd_config_advanced_UpdateSegbarNew (self, iHD, ip, PartCount);
+							PartCount++;
+						} else {
+							GtkTreeIter partExt = {0};
+							GtkTreeIter _tmp22_ = {0};
+							guint64 _tmp23_;
+							gchar* _tmp24_ = NULL;
+							gchar* _tmp25_;
 							const gchar* _tmp26_ = NULL;
-							_tmp25_ = exogenesis_install_hard_disk_get_SerialNumber (iHD);
-							_tmp26_ = exogenesis_hard_disk_get_SerialNumber (selectedHD);
-							if (g_strcmp0 (_tmp25_, _tmp26_) == 0) {
-								exogenesis_fhd_config_advanced_UpdateSegbarNew (self, iHD, ip, PartCount);
-							}
-						}
-						{
-							GeeIterator* _tmp27_ = NULL;
-							GeeIterator* _p_it;
-							_tmp27_ = gee_iterable_iterator ((GeeIterable*) ip);
-							_p_it = _tmp27_;
-							while (TRUE) {
-								gboolean _tmp28_;
-								gpointer _tmp29_ = NULL;
-								ExogenesisInstallPartition* p;
-								GtkTreeIter it = {0};
-								GtkTreeIter _tmp30_ = {0};
-								const gchar* _tmp31_ = NULL;
-								const gchar* _tmp32_ = NULL;
-								const gchar* _tmp33_ = NULL;
-								gboolean _tmp34_;
-								gboolean _tmp35_;
-								guint64 _tmp36_;
-								const gchar* _tmp37_ = NULL;
-								const gchar* _tmp38_ = NULL;
-								gboolean _tmp39_;
-								const gchar* _tmp40_ = NULL;
-								const gchar* _tmp41_ = NULL;
-								_tmp28_ = gee_iterator_next (_p_it);
-								if (!_tmp28_) {
-									break;
+							const gchar* _tmp27_ = NULL;
+							const gchar* _tmp28_ = NULL;
+							guint64 _tmp29_;
+							const gchar* _tmp30_ = NULL;
+							const gchar* _tmp31_ = NULL;
+							gtk_tree_store_append (self->priv->_lstNewPartitions, &_tmp22_, &iterDisk);
+							partExt = _tmp22_;
+							_tmp23_ = exogenesis_install_partition_get_ByteSize (ip);
+							_tmp24_ = g_strdup_printf ("%" G_GUINT64_FORMAT, _tmp23_);
+							_tmp25_ = _tmp24_;
+							_tmp26_ = exogenesis_install_partition_get_TypeID (ip);
+							_tmp27_ = string_to_string (_tmp26_);
+							_tmp28_ = exogenesis_install_partition_get_Device (ip);
+							fprintf (stdout, "Size = %s TypeID = %s  Device = %s\n", _tmp25_, _tmp27_, _tmp28_);
+							_g_free0 (_tmp25_);
+							_tmp29_ = exogenesis_install_partition_get_ByteSize (ip);
+							_tmp30_ = exogenesis_install_partition_get_TypeID (ip);
+							_tmp31_ = exogenesis_install_partition_get_Device (ip);
+							exogenesis_fhd_config_advanced_PopulateListItemNew (self, &partExt, "", "Extended", iHD, "", FALSE, FALSE, "", _tmp29_, _tmp30_, _tmp31_, "", FALSE, ip);
+							PartCount++;
+							{
+								GeeIterator* _tmp32_ = NULL;
+								GeeIterator* _p_it;
+								_tmp32_ = gee_iterable_iterator ((GeeIterable*) ip);
+								_p_it = _tmp32_;
+								while (TRUE) {
+									gboolean _tmp33_;
+									gpointer _tmp34_ = NULL;
+									ExogenesisInstallPartition* p;
+									GtkTreeIter it = {0};
+									GtkTreeIter _tmp35_ = {0};
+									const gchar* _tmp36_ = NULL;
+									const gchar* _tmp37_ = NULL;
+									const gchar* _tmp38_ = NULL;
+									guint64 _tmp39_;
+									const gchar* _tmp40_ = NULL;
+									const gchar* _tmp41_ = NULL;
+									const gchar* _tmp42_ = NULL;
+									const gchar* _tmp43_ = NULL;
+									_tmp33_ = gee_iterator_next (_p_it);
+									if (!_tmp33_) {
+										break;
+									}
+									_tmp34_ = gee_iterator_get (_p_it);
+									p = (ExogenesisInstallPartition*) _tmp34_;
+									gtk_tree_store_append (self->priv->_lstNewPartitions, &_tmp35_, &partExt);
+									it = _tmp35_;
+									_tmp36_ = exogenesis_install_partition_get_MountPoint (p);
+									_tmp37_ = exogenesis_install_partition_get_Type (p);
+									_tmp38_ = exogenesis_install_partition_get_Label (p);
+									_tmp39_ = exogenesis_install_partition_get_ByteSize (p);
+									_tmp40_ = exogenesis_install_partition_get_TypeID (p);
+									_tmp41_ = exogenesis_install_partition_get_Device (p);
+									exogenesis_fhd_config_advanced_PopulateListItemNew (self, &it, _tmp36_, _tmp37_, iHD, _tmp38_, FALSE, FALSE, "", _tmp39_, _tmp40_, _tmp41_, "", FALSE, p);
+									_tmp42_ = exogenesis_install_hard_disk_get_SerialNumber (iHD);
+									_tmp43_ = exogenesis_hard_disk_get_SerialNumber (selectedHD);
+									if (g_strcmp0 (_tmp42_, _tmp43_) == 0) {
+										exogenesis_fhd_config_advanced_UpdateSegbarNew (self, iHD, p, PartCount);
+									}
+									PartCount++;
+									_g_object_unref0 (p);
 								}
-								_tmp29_ = gee_iterator_get (_p_it);
-								p = (ExogenesisInstallPartition*) _tmp29_;
-								PartCount++;
-								gtk_tree_store_append (self->priv->_lstNewPartitions, &_tmp30_, &iterPart);
-								it = _tmp30_;
-								_tmp31_ = exogenesis_install_partition_get_MountPoint (p);
-								_tmp32_ = exogenesis_install_partition_get_Type (p);
-								_tmp33_ = exogenesis_install_partition_get_Label (p);
-								_tmp34_ = exogenesis_install_partition_get_Format (p);
-								_tmp35_ = exogenesis_install_partition_get_Use (p);
-								_tmp36_ = exogenesis_install_partition_get_ByteSize (p);
-								_tmp37_ = exogenesis_install_partition_get_TypeID (p);
-								_tmp38_ = exogenesis_install_partition_get_Device (p);
-								_tmp39_ = exogenesis_install_partition_get_NewPartition (p);
-								exogenesis_fhd_config_advanced_PopulateListItemNew (self, &it, _tmp31_, _tmp32_, iHD, _tmp33_, _tmp34_, _tmp35_, "", _tmp36_, _tmp37_, _tmp38_, "", _tmp39_, p);
-								_tmp40_ = exogenesis_install_hard_disk_get_SerialNumber (iHD);
-								_tmp41_ = exogenesis_hard_disk_get_SerialNumber (selectedHD);
-								if (g_strcmp0 (_tmp40_, _tmp41_) == 0) {
-									exogenesis_fhd_config_advanced_UpdateSegbarNew (self, iHD, p, PartCount);
-								}
-								_g_object_unref0 (p);
+								_g_object_unref0 (_p_it);
 							}
-							_g_object_unref0 (_p_it);
 						}
 						_g_object_unref0 (ip);
 					}
@@ -1248,7 +1367,6 @@ static void exogenesis_fhd_config_advanced_PopulateListItemNew (ExogenesisFHDCon
 
 static void exogenesis_fhd_config_advanced_ModelFromCurrentLayout (ExogenesisFHDConfigAdvanced* self) {
 	gint PartCount;
-	gchar* label = NULL;
 	ExogenesisHardDisk* _tmp0_ = NULL;
 	ExogenesisHardDisk* hd;
 	g_return_if_fail (self != NULL);
@@ -1260,13 +1378,12 @@ static void exogenesis_fhd_config_advanced_ModelFromCurrentLayout (ExogenesisFHD
 		GtkTreeIter iterDisk = {0};
 		GtkTreeIter _tmp1_ = {0};
 		const gchar* _tmp2_ = NULL;
-		gboolean _tmp37_ = FALSE;
-		const gchar* _tmp38_ = NULL;
+		gboolean _tmp42_ = FALSE;
+		const gchar* _tmp43_ = NULL;
 		gtk_tree_store_append (self->priv->_lstPartitions, &_tmp1_, NULL);
 		iterDisk = _tmp1_;
 		_tmp2_ = exogenesis_hard_disk_get_Model (hd);
 		gtk_tree_store_set (self->priv->_lstPartitions, &iterDisk, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_MountPoint, _tmp2_, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_HardDisk, hd, -1, -1);
-		gtk_tree_store_set (self->priv->_lstPartitions, &iterDisk, EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_RemoveIcon, GTK_STOCK_DELETE, -1, -1);
 		{
 			GeeIterator* _tmp3_ = NULL;
 			GeeIterator* _pi_it;
@@ -1278,99 +1395,115 @@ static void exogenesis_fhd_config_advanced_ModelFromCurrentLayout (ExogenesisFHD
 				ExogenesisPartitionInfo* pi;
 				GtkTreeIter iterPart = {0};
 				gboolean _tmp6_ = FALSE;
-				const gchar* _tmp7_ = NULL;
+				gboolean _tmp7_ = FALSE;
+				const gchar* _tmp8_ = NULL;
 				_tmp4_ = gee_iterator_next (_pi_it);
 				if (!_tmp4_) {
 					break;
 				}
 				_tmp5_ = gee_iterator_get (_pi_it);
 				pi = (ExogenesisPartitionInfo*) _tmp5_;
-				_tmp7_ = exogenesis_partition_info_get_OSType (pi);
-				if (g_strcmp0 (_tmp7_, "") != 0) {
-					const gchar* _tmp8_ = NULL;
+				_tmp8_ = exogenesis_partition_info_get_OSType (pi);
+				if (g_strcmp0 (_tmp8_, "") != 0) {
 					const gchar* _tmp9_ = NULL;
-					_tmp8_ = exogenesis_partition_info_get_Device (pi);
-					_tmp9_ = exogenesis_hard_disk_get_Device (hd);
-					_tmp6_ = g_strcmp0 (_tmp8_, _tmp9_) != 0;
+					const gchar* _tmp10_ = NULL;
+					_tmp9_ = exogenesis_partition_info_get_Device (pi);
+					_tmp10_ = exogenesis_hard_disk_get_Device (hd);
+					_tmp7_ = g_strcmp0 (_tmp9_, _tmp10_) != 0;
+				} else {
+					_tmp7_ = FALSE;
+				}
+				if (_tmp7_) {
+					const gchar* _tmp11_ = NULL;
+					gchar* _tmp12_ = NULL;
+					gchar* _tmp13_;
+					gboolean _tmp14_;
+					_tmp11_ = exogenesis_partition_info_get_PartitionType (pi);
+					_tmp12_ = g_utf8_strdown (_tmp11_, (gssize) (-1));
+					_tmp13_ = _tmp12_;
+					_tmp14_ = string_contains (_tmp13_, "extended");
+					_tmp6_ = !_tmp14_;
+					_g_free0 (_tmp13_);
 				} else {
 					_tmp6_ = FALSE;
 				}
 				if (_tmp6_) {
-					GtkTreeIter _tmp10_ = {0};
-					const gchar* _tmp11_ = NULL;
-					const gchar* _tmp12_ = NULL;
-					const gchar* _tmp13_ = NULL;
-					guint64 _tmp14_;
-					const gchar* _tmp15_ = NULL;
+					GtkTreeIter _tmp15_ = {0};
 					const gchar* _tmp16_ = NULL;
-					gtk_tree_store_append (self->priv->_lstPartitions, &_tmp10_, &iterDisk);
-					iterPart = _tmp10_;
-					_tmp11_ = exogenesis_partition_info_get_FSTabMountPoint (pi);
-					_tmp12_ = exogenesis_partition_info_get_OSType (pi);
-					_tmp13_ = exogenesis_partition_info_get_Label (pi);
-					_tmp14_ = exogenesis_partition_info_get_Capacity (pi);
-					_tmp15_ = exogenesis_partition_info_get_OSTypeID (pi);
-					_tmp16_ = exogenesis_partition_info_get_Device (pi);
-					exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &iterPart, _tmp11_, _tmp12_, hd, _tmp13_, FALSE, FALSE, "", _tmp14_, _tmp15_, _tmp16_, "", FALSE, pi);
+					const gchar* _tmp17_ = NULL;
+					const gchar* _tmp18_ = NULL;
+					guint64 _tmp19_;
+					const gchar* _tmp20_ = NULL;
+					const gchar* _tmp21_ = NULL;
+					gtk_tree_store_append (self->priv->_lstPartitions, &_tmp15_, &iterDisk);
+					iterPart = _tmp15_;
+					_tmp16_ = exogenesis_partition_info_get_FSTabMountPoint (pi);
+					_tmp17_ = exogenesis_partition_info_get_OSType (pi);
+					_tmp18_ = exogenesis_partition_info_get_Label (pi);
+					_tmp19_ = exogenesis_partition_info_get_Capacity (pi);
+					_tmp20_ = exogenesis_partition_info_get_OSTypeID (pi);
+					_tmp21_ = exogenesis_partition_info_get_Device (pi);
+					exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &iterPart, _tmp16_, _tmp17_, hd, _tmp18_, FALSE, FALSE, "", _tmp19_, _tmp20_, _tmp21_, "", FALSE, pi);
 					exogenesis_fhd_config_advanced_UpdateSegbarCurrent (self, hd, pi, PartCount);
 					PartCount++;
 				} else {
-					const gchar* _tmp17_ = NULL;
-					gchar* _tmp18_ = NULL;
-					gchar* _tmp19_;
-					gboolean _tmp20_;
-					gboolean _tmp21_;
-					_tmp17_ = exogenesis_partition_info_get_PartitionType (pi);
-					_tmp18_ = g_utf8_strdown (_tmp17_, (gssize) (-1));
-					_tmp19_ = _tmp18_;
-					_tmp20_ = string_contains (_tmp19_, "extended");
-					_tmp21_ = _tmp20_;
-					_g_free0 (_tmp19_);
-					if (_tmp21_) {
-						GtkTreeIter _tmp22_ = {0};
-						const gchar* _tmp23_ = NULL;
-						guint64 _tmp24_;
-						const gchar* _tmp25_ = NULL;
-						const gchar* _tmp26_ = NULL;
-						gtk_tree_store_append (self->priv->_lstPartitions, &_tmp22_, &iterDisk);
-						iterPart = _tmp22_;
-						_tmp23_ = exogenesis_partition_info_get_Label (pi);
-						_tmp24_ = exogenesis_partition_info_get_Capacity (pi);
-						_tmp25_ = exogenesis_partition_info_get_OSTypeID (pi);
-						_tmp26_ = exogenesis_partition_info_get_Device (pi);
-						exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &iterPart, "", "Extended", hd, _tmp23_, FALSE, FALSE, "", _tmp24_, _tmp25_, _tmp26_, "", FALSE, pi);
+					const gchar* _tmp22_ = NULL;
+					gchar* _tmp23_ = NULL;
+					gchar* _tmp24_;
+					gboolean _tmp25_;
+					gboolean _tmp26_;
+					_tmp22_ = exogenesis_partition_info_get_PartitionType (pi);
+					_tmp23_ = g_utf8_strdown (_tmp22_, (gssize) (-1));
+					_tmp24_ = _tmp23_;
+					_tmp25_ = string_contains (_tmp24_, "extended");
+					_tmp26_ = _tmp25_;
+					_g_free0 (_tmp24_);
+					if (_tmp26_) {
+						GtkTreeIter _tmp27_ = {0};
+						const gchar* _tmp28_ = NULL;
+						guint64 _tmp29_;
+						const gchar* _tmp30_ = NULL;
+						const gchar* _tmp31_ = NULL;
+						gtk_tree_store_append (self->priv->_lstPartitions, &_tmp27_, &iterDisk);
+						iterPart = _tmp27_;
+						_tmp28_ = exogenesis_partition_info_get_Label (pi);
+						_tmp29_ = exogenesis_partition_info_get_Capacity (pi);
+						_tmp30_ = exogenesis_partition_info_get_OSTypeID (pi);
+						_tmp31_ = exogenesis_partition_info_get_Device (pi);
+						exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &iterPart, "", "Extended", hd, _tmp28_, FALSE, FALSE, "", _tmp29_, _tmp30_, _tmp31_, "", FALSE, pi);
+						PartCount++;
 						{
-							GeeIterator* _tmp27_ = NULL;
+							GeeIterator* _tmp32_ = NULL;
 							GeeIterator* _p_it;
-							_tmp27_ = gee_iterable_iterator ((GeeIterable*) pi);
-							_p_it = _tmp27_;
+							_tmp32_ = gee_iterable_iterator ((GeeIterable*) pi);
+							_p_it = _tmp32_;
 							while (TRUE) {
-								gboolean _tmp28_;
-								gpointer _tmp29_ = NULL;
+								gboolean _tmp33_;
+								gpointer _tmp34_ = NULL;
 								ExogenesisPartitionInfo* p;
 								GtkTreeIter ti = {0};
-								GtkTreeIter _tmp30_ = {0};
-								const gchar* _tmp31_ = NULL;
-								const gchar* _tmp32_ = NULL;
-								const gchar* _tmp33_ = NULL;
-								guint64 _tmp34_;
-								const gchar* _tmp35_ = NULL;
+								GtkTreeIter _tmp35_ = {0};
 								const gchar* _tmp36_ = NULL;
-								_tmp28_ = gee_iterator_next (_p_it);
-								if (!_tmp28_) {
+								const gchar* _tmp37_ = NULL;
+								const gchar* _tmp38_ = NULL;
+								guint64 _tmp39_;
+								const gchar* _tmp40_ = NULL;
+								const gchar* _tmp41_ = NULL;
+								_tmp33_ = gee_iterator_next (_p_it);
+								if (!_tmp33_) {
 									break;
 								}
-								_tmp29_ = gee_iterator_get (_p_it);
-								p = (ExogenesisPartitionInfo*) _tmp29_;
-								gtk_tree_store_append (self->priv->_lstPartitions, &_tmp30_, &iterPart);
-								ti = _tmp30_;
-								_tmp31_ = exogenesis_partition_info_get_FSTabMountPoint (p);
-								_tmp32_ = exogenesis_partition_info_get_OSType (p);
-								_tmp33_ = exogenesis_partition_info_get_Label (p);
-								_tmp34_ = exogenesis_partition_info_get_Capacity (p);
-								_tmp35_ = exogenesis_partition_info_get_OSTypeID (p);
-								_tmp36_ = exogenesis_partition_info_get_Device (p);
-								exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &ti, _tmp31_, _tmp32_, hd, _tmp33_, FALSE, FALSE, "", _tmp34_, _tmp35_, _tmp36_, "", FALSE, p);
+								_tmp34_ = gee_iterator_get (_p_it);
+								p = (ExogenesisPartitionInfo*) _tmp34_;
+								gtk_tree_store_append (self->priv->_lstPartitions, &_tmp35_, &iterPart);
+								ti = _tmp35_;
+								_tmp36_ = exogenesis_partition_info_get_FSTabMountPoint (p);
+								_tmp37_ = exogenesis_partition_info_get_OSType (p);
+								_tmp38_ = exogenesis_partition_info_get_Label (p);
+								_tmp39_ = exogenesis_partition_info_get_Capacity (p);
+								_tmp40_ = exogenesis_partition_info_get_OSTypeID (p);
+								_tmp41_ = exogenesis_partition_info_get_Device (p);
+								exogenesis_fhd_config_advanced_PopulateListItemCurrent (self, &ti, _tmp36_, _tmp37_, hd, _tmp38_, FALSE, FALSE, "", _tmp39_, _tmp40_, _tmp41_, "", FALSE, p);
 								exogenesis_fhd_config_advanced_UpdateSegbarCurrent (self, hd, p, PartCount);
 								PartCount++;
 								_g_object_unref0 (p);
@@ -1383,29 +1516,28 @@ static void exogenesis_fhd_config_advanced_ModelFromCurrentLayout (ExogenesisFHD
 			}
 			_g_object_unref0 (_pi_it);
 		}
-		_tmp38_ = exogenesis_hard_disk_get_PreviousOS (hd);
-		if (_tmp38_ != NULL) {
-			const gchar* _tmp39_ = NULL;
-			_tmp39_ = exogenesis_hard_disk_get_PreviousOS (hd);
-			_tmp37_ = g_strcmp0 (_tmp39_, "") != 0;
+		_tmp43_ = exogenesis_hard_disk_get_PreviousOS (hd);
+		if (_tmp43_ != NULL) {
+			const gchar* _tmp44_ = NULL;
+			_tmp44_ = exogenesis_hard_disk_get_PreviousOS (hd);
+			_tmp42_ = g_strcmp0 (_tmp44_, "") != 0;
 		} else {
-			_tmp37_ = FALSE;
+			_tmp42_ = FALSE;
 		}
-		if (_tmp37_) {
-			const gchar* _tmp40_ = NULL;
-			gchar* _tmp41_ = NULL;
-			gchar* _tmp42_;
-			_tmp40_ = exogenesis_hard_disk_get_PreviousOS (hd);
-			_tmp41_ = g_strdup_printf ("This disk contains a version of \n%s", _tmp40_);
-			_tmp42_ = _tmp41_;
-			gtk_label_set_label (self->priv->lblPrevious, _tmp42_);
-			_g_free0 (_tmp42_);
+		if (_tmp42_) {
+			const gchar* _tmp45_ = NULL;
+			gchar* _tmp46_ = NULL;
+			gchar* _tmp47_;
+			_tmp45_ = exogenesis_hard_disk_get_PreviousOS (hd);
+			_tmp46_ = g_strdup_printf ("This disk contains a version of \n%s", _tmp45_);
+			_tmp47_ = _tmp46_;
+			gtk_label_set_label (self->priv->lblPrevious, _tmp47_);
+			_g_free0 (_tmp47_);
 		} else {
 			gtk_label_set_label (self->priv->lblPrevious, "");
 		}
 	}
 	_g_object_unref0 (hd);
-	_g_free0 (label);
 }
 
 
@@ -1434,21 +1566,34 @@ static void exogenesis_fhd_config_advanced_UpdateSegbarCurrent (ExogenesisFHDCon
 static void exogenesis_fhd_config_advanced_UpdateSegbarNew (ExogenesisFHDConfigAdvanced* self, ExogenesisInstallHardDisk* hd, ExogenesisInstallPartition* pi, gint PartCount) {
 	gchar* label = NULL;
 	const gchar* _tmp0_ = NULL;
-	const gchar* _tmp1_ = NULL;
-	gchar* _tmp2_ = NULL;
-	guint64 _tmp3_;
-	guint64 _tmp4_;
+	ExogenesisHardDisk* _tmp1_ = NULL;
+	ExogenesisHardDisk* _tmp2_;
+	const gchar* _tmp3_ = NULL;
+	gboolean _tmp4_;
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (hd != NULL);
 	g_return_if_fail (pi != NULL);
-	_tmp0_ = exogenesis_install_partition_get_Type (pi);
-	_tmp1_ = exogenesis_install_partition_get_DisplaySize (pi);
-	_tmp2_ = g_strdup_printf ("%s\n%s", _tmp0_, _tmp1_);
-	_g_free0 (label);
-	label = _tmp2_;
-	_tmp3_ = exogenesis_install_hard_disk_get_DriveSize (hd);
-	_tmp4_ = exogenesis_install_partition_get_ByteSize (pi);
-	exogenesis_fhd_config_advanced_AddToDiskDisplayBar (self, self->priv->segbarHD, _tmp3_, _tmp4_, label, PartCount);
+	_tmp0_ = exogenesis_install_hard_disk_get_SerialNumber (hd);
+	_tmp1_ = exogenesis_fhd_config_advanced_GetSelectedHD (self);
+	_tmp2_ = _tmp1_;
+	_tmp3_ = exogenesis_hard_disk_get_SerialNumber (_tmp2_);
+	_tmp4_ = g_strcmp0 (_tmp0_, _tmp3_) == 0;
+	_g_object_unref0 (_tmp2_);
+	if (_tmp4_) {
+		const gchar* _tmp5_ = NULL;
+		const gchar* _tmp6_ = NULL;
+		gchar* _tmp7_ = NULL;
+		guint64 _tmp8_;
+		guint64 _tmp9_;
+		_tmp5_ = exogenesis_install_partition_get_Type (pi);
+		_tmp6_ = exogenesis_install_partition_get_DisplaySize (pi);
+		_tmp7_ = g_strdup_printf ("%s\n%s", _tmp5_, _tmp6_);
+		_g_free0 (label);
+		label = _tmp7_;
+		_tmp8_ = exogenesis_install_hard_disk_get_DriveSize (hd);
+		_tmp9_ = exogenesis_install_partition_get_ByteSize (pi);
+		exogenesis_fhd_config_advanced_AddToDiskDisplayBar (self, self->priv->segbarHD, _tmp8_, _tmp9_, label, PartCount);
+	}
 	_g_free0 (label);
 }
 
@@ -1950,108 +2095,6 @@ static void exogenesis_fhd_config_advanced_HDDisplayAfter (ExogenesisFHDConfigAd
 }
 
 
-static void exogenesis_fhd_config_advanced_PopulateFromExisting (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* iter, gint idx, ExogenesisHardDisk* hd) {
-	GValue pSize = {0};
-	GValue pType = {0};
-	GValue pMount = {0};
-	GValue pLabel = {0};
-	GValue _tmp0_ = {0};
-	GValue _tmp1_ = {0};
-	GValue _tmp2_ = {0};
-	GValue _tmp3_ = {0};
-	gchar* mount = NULL;
-	gchar* fstype = NULL;
-	gchar* label = NULL;
-	const gchar* _tmp4_ = NULL;
-	const gchar* _tmp5_ = NULL;
-	gchar* _tmp7_;
-	gchar* _tmp8_ = NULL;
-	const gchar* _tmp9_ = NULL;
-	gchar* _tmp13_;
-	gchar* _tmp14_ = NULL;
-	const gchar* _tmp15_ = NULL;
-	gchar* _tmp19_;
-	guint64 _tmp20_;
-	guint64 _tmp21_;
-	gchar* _tmp22_ = NULL;
-	gchar* _tmp23_;
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (hd != NULL);
-	gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstPartitions, iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_MountPoint, &_tmp0_);
-	G_IS_VALUE (&pMount) ? (g_value_unset (&pMount), NULL) : NULL;
-	pMount = _tmp0_;
-	gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstPartitions, iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_ByteSize, &_tmp1_);
-	G_IS_VALUE (&pSize) ? (g_value_unset (&pSize), NULL) : NULL;
-	pSize = _tmp1_;
-	gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstPartitions, iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatType, &_tmp2_);
-	G_IS_VALUE (&pType) ? (g_value_unset (&pType), NULL) : NULL;
-	pType = _tmp2_;
-	gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstPartitions, iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_Label, &_tmp3_);
-	G_IS_VALUE (&pLabel) ? (g_value_unset (&pLabel), NULL) : NULL;
-	pLabel = _tmp3_;
-	_tmp5_ = g_value_get_string (&pType);
-	if (_tmp5_ != NULL) {
-		const gchar* _tmp6_ = NULL;
-		_tmp6_ = g_value_get_string (&pType);
-		_tmp4_ = _tmp6_;
-	} else {
-		_tmp4_ = "";
-	}
-	_tmp7_ = g_strdup (_tmp4_);
-	_g_free0 (fstype);
-	fstype = _tmp7_;
-	_tmp9_ = g_value_get_string (&pMount);
-	if (_tmp9_ != NULL) {
-		const gchar* _tmp10_ = NULL;
-		gchar* _tmp11_;
-		_tmp10_ = g_value_get_string (&pMount);
-		_tmp11_ = g_strconcat ("\n", _tmp10_, NULL);
-		_g_free0 (_tmp8_);
-		_tmp8_ = _tmp11_;
-	} else {
-		gchar* _tmp12_;
-		_tmp12_ = g_strdup ("");
-		_g_free0 (_tmp8_);
-		_tmp8_ = _tmp12_;
-	}
-	_tmp13_ = g_strdup (_tmp8_);
-	_g_free0 (mount);
-	mount = _tmp13_;
-	_tmp15_ = g_value_get_string (&pLabel);
-	if (_tmp15_ != NULL) {
-		const gchar* _tmp16_ = NULL;
-		gchar* _tmp17_;
-		_tmp16_ = g_value_get_string (&pLabel);
-		_tmp17_ = g_strconcat ("\n", _tmp16_, NULL);
-		_g_free0 (_tmp14_);
-		_tmp14_ = _tmp17_;
-	} else {
-		gchar* _tmp18_;
-		_tmp18_ = g_strdup ("");
-		_g_free0 (_tmp14_);
-		_tmp14_ = _tmp18_;
-	}
-	_tmp19_ = g_strdup (_tmp14_);
-	_g_free0 (label);
-	label = _tmp19_;
-	_tmp20_ = exogenesis_hard_disk_get_Capacity (hd);
-	_tmp21_ = g_value_get_uint64 (&pSize);
-	_tmp22_ = g_strdup_printf ("%s%s%s", fstype, mount, label);
-	_tmp23_ = _tmp22_;
-	exogenesis_fhd_config_advanced_AddToDiskDisplayBar (self, self->priv->segbarHD, _tmp20_, _tmp21_, _tmp23_, idx);
-	_g_free0 (_tmp23_);
-	_g_free0 (_tmp14_);
-	_g_free0 (_tmp8_);
-	_g_free0 (label);
-	_g_free0 (fstype);
-	_g_free0 (mount);
-	G_IS_VALUE (&pLabel) ? (g_value_unset (&pLabel), NULL) : NULL;
-	G_IS_VALUE (&pMount) ? (g_value_unset (&pMount), NULL) : NULL;
-	G_IS_VALUE (&pType) ? (g_value_unset (&pType), NULL) : NULL;
-	G_IS_VALUE (&pSize) ? (g_value_unset (&pSize), NULL) : NULL;
-}
-
-
 static void exogenesis_fhd_config_advanced_AddInstallPartitions (ExogenesisFHDConfigAdvanced* self) {
 	GtkTreeIter iter = {0};
 	GValue hdVal = {0};
@@ -2411,98 +2454,77 @@ static void exogenesis_fhd_config_advanced_DebugTree (ExogenesisFHDConfigAdvance
 }
 
 
-static void exogenesis_fhd_config_advanced_GetSelectedPartition (ExogenesisFHDConfigAdvanced* self, GtkTreeIter* result) {
-	GtkTreeIter iter = {0};
-	GtkTreeSelection* _tmp0_ = NULL;
-	GtkTreeSelection* _tmp1_;
-	GtkTreeSelection* ts;
-	GtkTreeIter _tmp2_ = {0};
-	g_return_if_fail (self != NULL);
-	_tmp0_ = gtk_tree_view_get_selection (self->priv->trvHDALayout);
-	_tmp1_ = _g_object_ref0 (_tmp0_);
-	ts = _tmp1_;
-	gtk_tree_selection_get_selected (ts, NULL, &_tmp2_);
-	iter = _tmp2_;
-	*result = iter;
-	_g_object_unref0 (ts);
-	return;
-}
-
-
 void exogenesis_fhd_config_advanced_OnCellDelClicked (ExogenesisFHDConfigAdvanced* self, const gchar* path) {
 	GtkTreeIter iter = {0};
 	GValue val = {0};
 	ExogenesisInstallHardDisk* ihd = NULL;
 	guint64 available = 0ULL;
-	GtkTreeStore* selectedStore = NULL;
 	GtkTreePath* _tmp0_ = NULL;
 	GtkTreePath* tp;
-	GtkTreeStore* _tmp1_;
-	gint _tmp2_;
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (path != NULL);
 	_tmp0_ = gtk_tree_path_new_from_string (path);
 	tp = _tmp0_;
-	_tmp1_ = _g_object_ref0 (self->priv->_lstNewPartitions);
-	_g_object_unref0 (selectedStore);
-	selectedStore = _tmp1_;
-	_tmp2_ = gtk_tree_path_get_depth (tp);
-	if (_tmp2_ > 1) {
-		GtkTreeIter _tmp3_ = {0};
+	{
+		GtkTreeIter _tmp1_ = {0};
+		GValue _tmp2_ = {0};
+		guint64 _tmp3_;
 		GValue _tmp4_ = {0};
-		guint64 _tmp5_;
-		GValue _tmp6_ = {0};
-		ExogenesisInstallHardDisk* _tmp7_;
-		gboolean _tmp8_;
-		const gchar* _tmp12_ = NULL;
-		gtk_tree_model_get_iter ((GtkTreeModel*) selectedStore, &_tmp3_, tp);
-		iter = _tmp3_;
-		gtk_tree_model_get_value ((GtkTreeModel*) selectedStore, &iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_ByteSize, &_tmp4_);
+		ExogenesisInstallHardDisk* _tmp5_;
+		gboolean _tmp6_;
+		ExogenesisInstallPartition* _tmp10_ = NULL;
+		ExogenesisInstallPartition* ipart;
+		const gchar* _tmp11_ = NULL;
+		gtk_tree_model_get_iter ((GtkTreeModel*) self->priv->_lstNewPartitions, &_tmp1_, tp);
+		iter = _tmp1_;
+		gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstNewPartitions, &iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_ByteSize, &_tmp2_);
+		G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
+		val = _tmp2_;
+		_tmp3_ = g_value_get_uint64 (&val);
+		available = _tmp3_;
+		gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstNewPartitions, &iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_HardDisk, &_tmp4_);
 		G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
 		val = _tmp4_;
-		_tmp5_ = g_value_get_uint64 (&val);
-		available = _tmp5_;
-		gtk_tree_model_get_value ((GtkTreeModel*) selectedStore, &iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_HardDisk, &_tmp6_);
-		G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
-		val = _tmp6_;
-		_tmp7_ = _g_object_ref0 (g_value_get_object (&val));
+		_tmp5_ = _g_object_ref0 (g_value_get_object (&val));
 		_g_object_unref0 (ihd);
-		ihd = _tmp7_;
-		_tmp8_ = gtk_tree_model_iter_has_child ((GtkTreeModel*) selectedStore, &iter);
-		if (_tmp8_) {
+		ihd = _tmp5_;
+		_tmp6_ = gtk_tree_model_iter_has_child ((GtkTreeModel*) self->priv->_lstNewPartitions, &iter);
+		if (_tmp6_) {
 			GtkTreeIter childIter = {0};
 			gint i = 0;
-			gint _tmp9_;
-			_tmp9_ = gtk_tree_model_iter_n_children ((GtkTreeModel*) selectedStore, &iter);
-			i = _tmp9_ - 1;
+			gint _tmp7_;
+			_tmp7_ = gtk_tree_model_iter_n_children ((GtkTreeModel*) self->priv->_lstNewPartitions, &iter);
+			i = _tmp7_ - 1;
 			{
 				gint x;
 				x = i;
 				{
-					gboolean _tmp10_;
-					_tmp10_ = TRUE;
+					gboolean _tmp8_;
+					_tmp8_ = TRUE;
 					while (TRUE) {
-						GtkTreeIter _tmp11_ = {0};
-						if (!_tmp10_) {
+						GtkTreeIter _tmp9_ = {0};
+						if (!_tmp8_) {
 							x--;
 						}
-						_tmp10_ = FALSE;
+						_tmp8_ = FALSE;
 						if (!(x > (-1))) {
 							break;
 						}
-						gtk_tree_model_iter_nth_child ((GtkTreeModel*) selectedStore, &_tmp11_, &iter, x);
-						childIter = _tmp11_;
-						gtk_tree_store_remove (selectedStore, &childIter);
+						gtk_tree_model_iter_nth_child ((GtkTreeModel*) self->priv->_lstNewPartitions, &_tmp9_, &iter, x);
+						childIter = _tmp9_;
+						gtk_tree_store_remove (self->priv->_lstNewPartitions, &childIter);
 					}
 				}
 			}
 		}
-		_tmp12_ = exogenesis_install_hard_disk_get_DeviceName (ihd);
-		exogenesis_fhd_config_advanced_PopulateListItemNew (self, &iter, "", "Unallocated", ihd, "", FALSE, FALSE, "", available, "Unallocated", _tmp12_, "", TRUE, NULL);
+		_tmp10_ = exogenesis_install_partition_new ();
+		ipart = _tmp10_;
+		_tmp11_ = exogenesis_install_hard_disk_get_DeviceName (ihd);
+		exogenesis_fhd_config_advanced_PopulateListItemNew (self, &iter, "", "Unallocated", ihd, "", FALSE, FALSE, "", available, "Unallocated", _tmp11_, "", TRUE, ipart);
 		exogenesis_fhd_config_advanced_RecalcUnallocated (self, &iter);
+		_g_object_unref0 (ipart);
 	}
 	_gtk_tree_path_free0 (tp);
-	_g_object_unref0 (selectedStore);
 	_g_object_unref0 (ihd);
 	G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
 }
@@ -2618,60 +2640,6 @@ static void exogenesis_fhd_config_advanced_RecalcUnallocated (ExogenesisFHDConfi
 }
 
 
-gboolean exogenesis_fhd_config_advanced_TrvHDALayout_RowClick (ExogenesisFHDConfigAdvanced* self, GdkEventButton* evt) {
-	gboolean result = FALSE;
-	GtkTreeIter iter = {0};
-	GValue val = {0};
-	GtkTreeSelection* _tmp0_ = NULL;
-	GtkTreeSelection* _tmp1_;
-	GtkTreeSelection* ts;
-	GtkTreeIter _tmp2_ = {0};
-	gboolean enabled;
-	GValue _tmp3_ = {0};
-	gboolean _tmp4_ = FALSE;
-	const gchar* _tmp5_ = NULL;
-	gchar* _tmp6_ = NULL;
-	gchar* _tmp7_;
-	gboolean _tmp8_;
-	g_return_val_if_fail (self != NULL, FALSE);
-	_tmp0_ = gtk_tree_view_get_selection (self->priv->trvHDALayout);
-	_tmp1_ = _g_object_ref0 (_tmp0_);
-	ts = _tmp1_;
-	gtk_tree_selection_get_selected (ts, NULL, &_tmp2_);
-	iter = _tmp2_;
-	enabled = FALSE;
-	gtk_tree_model_get_value ((GtkTreeModel*) self->priv->_lstPartitions, &iter, (gint) EXOGENESIS_FHD_CONFIG_ADVANCED_PARTITION_COLS_FormatType, &_tmp3_);
-	G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
-	val = _tmp3_;
-	_tmp5_ = g_value_get_string (&val);
-	_tmp6_ = g_utf8_strdown (_tmp5_, (gssize) (-1));
-	_tmp7_ = _tmp6_;
-	_tmp8_ = g_strcmp0 (_tmp7_, "unallocated") == 0;
-	_g_free0 (_tmp7_);
-	if (_tmp8_) {
-		_tmp4_ = TRUE;
-	} else {
-		const gchar* _tmp9_ = NULL;
-		gchar* _tmp10_ = NULL;
-		gchar* _tmp11_;
-		gboolean _tmp12_;
-		_tmp9_ = g_value_get_string (&val);
-		_tmp10_ = g_utf8_strdown (_tmp9_, (gssize) (-1));
-		_tmp11_ = _tmp10_;
-		_tmp12_ = string_contains (_tmp11_, "extended");
-		_tmp4_ = _tmp12_;
-		_g_free0 (_tmp11_);
-	}
-	if (_tmp4_) {
-		enabled = TRUE;
-	}
-	result = FALSE;
-	_g_object_unref0 (ts);
-	G_IS_VALUE (&val) ? (g_value_unset (&val), NULL) : NULL;
-	return result;
-}
-
-
 void exogenesis_fhd_config_advanced_OnBtnApply_Click (ExogenesisFHDConfigAdvanced* self) {
 	GtkContainer* _tmp0_ = NULL;
 	g_return_if_fail (self != NULL);
@@ -2699,9 +2667,10 @@ void exogenesis_fhd_config_advanced_OnBtnCreatePartition_Click (ExogenesisFHDCon
 	ExogenesisHardDisk* _tmp0_ = NULL;
 	ExogenesisHardDisk* selectedHD;
 	guint64 _tmp7_;
-	gchar* _tmp8_ = NULL;
-	gchar* _tmp9_;
-	gboolean _tmp10_ = FALSE;
+	guint64 _tmp8_;
+	gchar* _tmp9_ = NULL;
+	gchar* _tmp10_;
+	gboolean _tmp11_ = FALSE;
 	g_return_if_fail (self != NULL);
 	ihd = NULL;
 	_tmp0_ = exogenesis_fhd_config_advanced_GetSelectedHD (self);
@@ -2738,24 +2707,25 @@ void exogenesis_fhd_config_advanced_OnBtnCreatePartition_Click (ExogenesisFHDCon
 		_g_object_unref0 (_h_it);
 	}
 	_tmp7_ = exogenesis_install_hard_disk_AvailableSize (ihd);
-	_tmp8_ = g_strdup_printf ("%" G_GUINT64_FORMAT, _tmp7_);
-	_tmp9_ = _tmp8_;
-	fprintf (stdout, "AVAILABLE SIZE %s\n", _tmp9_);
-	_g_free0 (_tmp9_);
+	_tmp8_ = exogenesis_install_hard_disk_get_StartSector (ihd);
+	_tmp9_ = g_strdup_printf ("%" G_GUINT64_FORMAT, _tmp7_ - _tmp8_);
+	_tmp10_ = _tmp9_;
+	fprintf (stdout, "AVAILABLE SIZE %s\n", _tmp10_);
+	_g_free0 (_tmp10_);
 	if (ihd != NULL) {
-		guint64 _tmp11_;
-		_tmp11_ = exogenesis_install_hard_disk_AvailableSize (ihd);
-		_tmp10_ = _tmp11_ > 0;
-	} else {
-		_tmp10_ = FALSE;
-	}
-	if (_tmp10_) {
 		guint64 _tmp12_;
-		ExogenesisFCreatePartition* _tmp13_ = NULL;
 		_tmp12_ = exogenesis_install_hard_disk_AvailableSize (ihd);
-		_tmp13_ = exogenesis_fcreate_partition_new (ihd, _tmp12_, self);
+		_tmp11_ = _tmp12_ > 0;
+	} else {
+		_tmp11_ = FALSE;
+	}
+	if (_tmp11_) {
+		guint64 _tmp13_;
+		ExogenesisFCreatePartition* _tmp14_ = NULL;
+		_tmp13_ = exogenesis_install_hard_disk_AvailableSize (ihd);
+		_tmp14_ = exogenesis_fcreate_partition_new (ihd, _tmp13_, self);
 		_g_object_unref0 (fcp);
-		fcp = g_object_ref_sink (_tmp13_);
+		fcp = g_object_ref_sink (_tmp14_);
 		exogenesis_general_functions_ShowWindow (GTK_BOX (fcp), "Exogenesis", TRUE);
 	}
 	_g_object_unref0 (selectedHD);
@@ -2821,7 +2791,6 @@ static void exogenesis_fhd_config_advanced_OnDriveMounted (ExogenesisFHDConfigAd
 
 static void exogenesis_fhd_config_advanced_OnRealized (ExogenesisFHDConfigAdvanced* self) {
 	g_return_if_fail (self != NULL);
-	fprintf (stdout, "REALISED\n");
 	exogenesis_fhd_config_advanced_OnCboHD_Changed (self);
 	gtk_widget_show_all ((GtkWidget*) self);
 }
@@ -2838,6 +2807,8 @@ static void exogenesis_fhd_config_advanced_instance_init (ExogenesisFHDConfigAdv
 	GtkListStore* _tmp0_ = NULL;
 	GtkTreeStore* _tmp1_ = NULL;
 	GtkTreeStore* _tmp2_ = NULL;
+	GtkListStore* _tmp3_ = NULL;
+	GtkListStore* _tmp4_ = NULL;
 	self->priv = EXOGENESIS_FHD_CONFIG_ADVANCED_GET_PRIVATE (self);
 	_tmp0_ = gtk_list_store_new (2, G_TYPE_STRING, EXOGENESIS_TYPE_HARD_DISK);
 	self->priv->_lstDisks = _tmp0_;
@@ -2845,6 +2816,10 @@ static void exogenesis_fhd_config_advanced_instance_init (ExogenesisFHDConfigAdv
 	self->priv->_lstPartitions = _tmp1_;
 	_tmp2_ = gtk_tree_store_new (14, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, EXOGENESIS_TYPE_INSTALL_HARD_DISK, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_UINT64, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, EXOGENESIS_TYPE_INSTALL_PARTITION);
 	self->priv->_lstNewPartitions = _tmp2_;
+	_tmp3_ = gtk_list_store_new (2, G_TYPE_STRING, EXOGENESIS_TYPE_FILESYSTEM_TYPE);
+	self->priv->_lstPartTypes = _tmp3_;
+	_tmp4_ = gtk_list_store_new (2, G_TYPE_STRING, EXOGENESIS_TYPE_MOUNT_POINT);
+	self->priv->_lstMountPoints = _tmp4_;
 }
 
 
@@ -2881,6 +2856,8 @@ static void exogenesis_fhd_config_advanced_finalize (GObject* obj) {
 	_g_object_unref0 (self->priv->_lstDisks);
 	_g_object_unref0 (self->priv->_lstPartitions);
 	_g_object_unref0 (self->priv->_lstNewPartitions);
+	_g_object_unref0 (self->priv->_lstPartTypes);
+	_g_object_unref0 (self->priv->_lstMountPoints);
 	G_OBJECT_CLASS (exogenesis_fhd_config_advanced_parent_class)->finalize (obj);
 }
 

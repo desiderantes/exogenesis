@@ -249,6 +249,7 @@ namespace Exogenesis
         public string 	SerialNumber 	{ get; set; }
         public bool 	IsGrubTarget	{ get; set; }
 		public uint64 	DriveSize		{ get; set; }
+		public uint64 StartSector		{ get; set; }
 		
         private Gee.ArrayList<InstallPartition> _partitions = new Gee.ArrayList<InstallPartition>(); 
 
@@ -257,9 +258,7 @@ namespace Exogenesis
 
 		public uint64 AvailableSize()
 		{
-			uint64 size = this.DriveSize;
-			
-stdout.printf("Drive %s total size = %s\n", DeviceName, size.to_string() );
+			uint64 size = this.DriveSize - StartSector;
 			
 			foreach ( InstallPartition p in this._partitions )
 			{ 
@@ -271,7 +270,6 @@ stdout.printf("Drive %s total size = %s\n", DeviceName, size.to_string() );
 				else
 				{ size -= p.ByteSize; } 
 			}
-
 			return size;
 		}
 		

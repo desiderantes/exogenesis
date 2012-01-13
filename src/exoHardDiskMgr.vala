@@ -700,11 +700,6 @@ namespace Exogenesis
 			{ return p.StartSector; }
 		}
 		
-		public uint64 FirstPartitionStartSector()
-		{
-			return 0;
-		}
-		
 		public void RemovePartition( PartitionInfo pi )
 		{ this._partitions.remove(pi); }
 

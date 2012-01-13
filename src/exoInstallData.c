@@ -22,7 +22,6 @@
 #include <gee.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <gobject/gvaluecollector.h>
 
 
@@ -217,6 +216,7 @@ struct _ExogenesisInstallHardDiskPrivate {
 	gchar* _SerialNumber;
 	gboolean _IsGrubTarget;
 	guint64 _DriveSize;
+	guint64 _StartSector;
 	GeeArrayList* _partitions;
 };
 
@@ -435,6 +435,7 @@ enum  {
 	EXOGENESIS_INSTALL_HARD_DISK_SERIAL_NUMBER,
 	EXOGENESIS_INSTALL_HARD_DISK_IS_GRUB_TARGET,
 	EXOGENESIS_INSTALL_HARD_DISK_DRIVE_SIZE,
+	EXOGENESIS_INSTALL_HARD_DISK_START_SECTOR,
 	EXOGENESIS_INSTALL_HARD_DISK_PARTITION_COUNT,
 	EXOGENESIS_INSTALL_HARD_DISK_ELEMENT_TYPE
 };
@@ -442,7 +443,7 @@ ExogenesisInstallHardDisk* exogenesis_install_hard_disk_new (void);
 ExogenesisInstallHardDisk* exogenesis_install_hard_disk_construct (GType object_type);
 guint64 exogenesis_install_hard_disk_AvailableSize (ExogenesisInstallHardDisk* self);
 guint64 exogenesis_install_hard_disk_get_DriveSize (ExogenesisInstallHardDisk* self);
-const gchar* exogenesis_install_hard_disk_get_DeviceName (ExogenesisInstallHardDisk* self);
+guint64 exogenesis_install_hard_disk_get_StartSector (ExogenesisInstallHardDisk* self);
 const gchar* exogenesis_install_partition_get_Type (ExogenesisInstallPartition* self);
 guint64 exogenesis_install_partition_get_ByteSize (ExogenesisInstallPartition* self);
 gint exogenesis_install_hard_disk_IndexOf (ExogenesisInstallHardDisk* self, ExogenesisInstallPartition* ip);
@@ -450,6 +451,7 @@ void exogenesis_install_hard_disk_AddPartition (ExogenesisInstallHardDisk* self,
 static GeeIterator* exogenesis_install_hard_disk_real_iterator (GeeIterable* base);
 void exogenesis_install_hard_disk_SortPartitions (ExogenesisInstallHardDisk* self);
 void exogenesis_install_partition_SortPartitions (ExogenesisInstallPartition* self);
+const gchar* exogenesis_install_hard_disk_get_DeviceName (ExogenesisInstallHardDisk* self);
 void exogenesis_install_hard_disk_set_DeviceName (ExogenesisInstallHardDisk* self, const gchar* value);
 const gchar* exogenesis_install_hard_disk_get_Model (ExogenesisInstallHardDisk* self);
 void exogenesis_install_hard_disk_set_Model (ExogenesisInstallHardDisk* self, const gchar* value);
@@ -458,6 +460,7 @@ void exogenesis_install_hard_disk_set_SerialNumber (ExogenesisInstallHardDisk* s
 gboolean exogenesis_install_hard_disk_get_IsGrubTarget (ExogenesisInstallHardDisk* self);
 void exogenesis_install_hard_disk_set_IsGrubTarget (ExogenesisInstallHardDisk* self, gboolean value);
 void exogenesis_install_hard_disk_set_DriveSize (ExogenesisInstallHardDisk* self, guint64 value);
+void exogenesis_install_hard_disk_set_StartSector (ExogenesisInstallHardDisk* self, guint64 value);
 static void exogenesis_install_hard_disk_finalize (GObject* obj);
 static void _vala_exogenesis_install_hard_disk_get_property (GObject * object, guint property_id, GValue * value, GParamSpec * pspec);
 static void _vala_exogenesis_install_hard_disk_set_property (GObject * object, guint property_id, const GValue * value, GParamSpec * pspec);
@@ -1475,72 +1478,66 @@ static gboolean string_contains (const gchar* self, const gchar* needle) {
 guint64 exogenesis_install_hard_disk_AvailableSize (ExogenesisInstallHardDisk* self) {
 	guint64 result = 0ULL;
 	guint64 size;
-	gchar* _tmp0_ = NULL;
-	gchar* _tmp1_;
 	g_return_val_if_fail (self != NULL, 0ULL);
-	size = self->priv->_DriveSize;
-	_tmp0_ = g_strdup_printf ("%" G_GUINT64_FORMAT, size);
-	_tmp1_ = _tmp0_;
-	fprintf (stdout, "Drive %s total size = %s\n", self->priv->_DeviceName, _tmp1_);
-	_g_free0 (_tmp1_);
+	size = self->priv->_DriveSize - self->priv->_StartSector;
 	{
-		GeeArrayList* _tmp2_;
+		GeeArrayList* _tmp0_;
 		GeeArrayList* _p_list;
-		gint _tmp3_;
+		gint _tmp1_;
 		gint _p_size;
 		gint _p_index;
-		_tmp2_ = _g_object_ref0 (self->priv->_partitions);
-		_p_list = _tmp2_;
-		_tmp3_ = gee_collection_get_size ((GeeCollection*) _p_list);
-		_p_size = _tmp3_;
+		_tmp0_ = _g_object_ref0 (self->priv->_partitions);
+		_p_list = _tmp0_;
+		_tmp1_ = gee_collection_get_size ((GeeCollection*) _p_list);
+		_p_size = _tmp1_;
 		_p_index = -1;
 		while (TRUE) {
-			gpointer _tmp4_ = NULL;
+			gpointer _tmp2_ = NULL;
 			ExogenesisInstallPartition* p;
-			const gchar* _tmp5_ = NULL;
-			gchar* _tmp6_ = NULL;
-			gchar* _tmp7_;
-			gboolean _tmp8_;
-			gboolean _tmp9_;
+			const gchar* _tmp3_ = NULL;
+			gchar* _tmp4_ = NULL;
+			gchar* _tmp5_;
+			gboolean _tmp6_;
+			gboolean _tmp7_;
 			_p_index = _p_index + 1;
 			if (!(_p_index < _p_size)) {
 				break;
 			}
-			_tmp4_ = gee_abstract_list_get ((GeeAbstractList*) _p_list, _p_index);
-			p = (ExogenesisInstallPartition*) _tmp4_;
-			_tmp5_ = exogenesis_install_partition_get_Type (p);
-			_tmp6_ = g_utf8_strdown (_tmp5_, (gssize) (-1));
+			_tmp2_ = gee_abstract_list_get ((GeeAbstractList*) _p_list, _p_index);
+			p = (ExogenesisInstallPartition*) _tmp2_;
+			_tmp3_ = exogenesis_install_partition_get_Type (p);
+			_tmp4_ = g_utf8_strdown (_tmp3_, (gssize) (-1));
+			_tmp5_ = _tmp4_;
+			_tmp6_ = string_contains (_tmp5_, "extended");
 			_tmp7_ = _tmp6_;
-			_tmp8_ = string_contains (_tmp7_, "extended");
-			_tmp9_ = _tmp8_;
-			_g_free0 (_tmp7_);
-			if (_tmp9_) {
+			_g_free0 (_tmp5_);
+			if (_tmp7_) {
 				{
-					GeeIterator* _tmp10_ = NULL;
+					GeeIterator* _tmp8_ = NULL;
 					GeeIterator* _i_it;
-					_tmp10_ = gee_iterable_iterator ((GeeIterable*) p);
-					_i_it = _tmp10_;
+					_tmp8_ = gee_iterable_iterator ((GeeIterable*) p);
+					_i_it = _tmp8_;
 					while (TRUE) {
-						gboolean _tmp11_;
-						gpointer _tmp12_ = NULL;
+						gboolean _tmp9_;
+						gpointer _tmp10_ = NULL;
 						ExogenesisInstallPartition* i;
-						guint64 _tmp13_;
-						_tmp11_ = gee_iterator_next (_i_it);
-						if (!_tmp11_) {
+						guint64 _tmp11_;
+						_tmp9_ = gee_iterator_next (_i_it);
+						if (!_tmp9_) {
 							break;
 						}
-						_tmp12_ = gee_iterator_get (_i_it);
-						i = (ExogenesisInstallPartition*) _tmp12_;
-						_tmp13_ = exogenesis_install_partition_get_ByteSize (i);
-						size = size - _tmp13_;
+						_tmp10_ = gee_iterator_get (_i_it);
+						i = (ExogenesisInstallPartition*) _tmp10_;
+						_tmp11_ = exogenesis_install_partition_get_ByteSize (i);
+						size = size - _tmp11_;
 						_g_object_unref0 (i);
 					}
 					_g_object_unref0 (_i_it);
 				}
 			} else {
-				guint64 _tmp14_;
-				_tmp14_ = exogenesis_install_partition_get_ByteSize (p);
-				size = size - _tmp14_;
+				guint64 _tmp12_;
+				_tmp12_ = exogenesis_install_partition_get_ByteSize (p);
+				size = size - _tmp12_;
 			}
 			_g_object_unref0 (p);
 		}
@@ -1705,6 +1702,21 @@ void exogenesis_install_hard_disk_set_DriveSize (ExogenesisInstallHardDisk* self
 }
 
 
+guint64 exogenesis_install_hard_disk_get_StartSector (ExogenesisInstallHardDisk* self) {
+	guint64 result;
+	g_return_val_if_fail (self != NULL, 0ULL);
+	result = self->priv->_StartSector;
+	return result;
+}
+
+
+void exogenesis_install_hard_disk_set_StartSector (ExogenesisInstallHardDisk* self, guint64 value) {
+	g_return_if_fail (self != NULL);
+	self->priv->_StartSector = value;
+	g_object_notify ((GObject *) self, "StartSector");
+}
+
+
 gint exogenesis_install_hard_disk_get_PartitionCount (ExogenesisInstallHardDisk* self) {
 	gint result;
 	gint _tmp0_;
@@ -1735,6 +1747,7 @@ static void exogenesis_install_hard_disk_class_init (ExogenesisInstallHardDiskCl
 	g_object_class_install_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_SERIAL_NUMBER, g_param_spec_string ("SerialNumber", "SerialNumber", "SerialNumber", NULL, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE | G_PARAM_WRITABLE));
 	g_object_class_install_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_IS_GRUB_TARGET, g_param_spec_boolean ("IsGrubTarget", "IsGrubTarget", "IsGrubTarget", FALSE, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE | G_PARAM_WRITABLE));
 	g_object_class_install_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_DRIVE_SIZE, g_param_spec_uint64 ("DriveSize", "DriveSize", "DriveSize", 0, G_MAXUINT64, 0U, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE | G_PARAM_WRITABLE));
+	g_object_class_install_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_START_SECTOR, g_param_spec_uint64 ("StartSector", "StartSector", "StartSector", 0, G_MAXUINT64, 0U, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE | G_PARAM_WRITABLE));
 	g_object_class_install_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_PARTITION_COUNT, g_param_spec_int ("PartitionCount", "PartitionCount", "PartitionCount", G_MININT, G_MAXINT, 0, G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB | G_PARAM_READABLE));
 	g_object_class_override_property (G_OBJECT_CLASS (klass), EXOGENESIS_INSTALL_HARD_DISK_ELEMENT_TYPE, "element-type");
 }
@@ -1799,6 +1812,9 @@ static void _vala_exogenesis_install_hard_disk_get_property (GObject * object, g
 		case EXOGENESIS_INSTALL_HARD_DISK_DRIVE_SIZE:
 		g_value_set_uint64 (value, exogenesis_install_hard_disk_get_DriveSize (self));
 		break;
+		case EXOGENESIS_INSTALL_HARD_DISK_START_SECTOR:
+		g_value_set_uint64 (value, exogenesis_install_hard_disk_get_StartSector (self));
+		break;
 		case EXOGENESIS_INSTALL_HARD_DISK_PARTITION_COUNT:
 		g_value_set_int (value, exogenesis_install_hard_disk_get_PartitionCount (self));
 		break;
@@ -1830,6 +1846,9 @@ static void _vala_exogenesis_install_hard_disk_set_property (GObject * object, g
 		break;
 		case EXOGENESIS_INSTALL_HARD_DISK_DRIVE_SIZE:
 		exogenesis_install_hard_disk_set_DriveSize (self, g_value_get_uint64 (value));
+		break;
+		case EXOGENESIS_INSTALL_HARD_DISK_START_SECTOR:
+		exogenesis_install_hard_disk_set_StartSector (self, g_value_get_uint64 (value));
 		break;
 		default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

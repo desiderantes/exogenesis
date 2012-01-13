@@ -469,7 +469,6 @@ enum  {
 };
 static gint exogenesis_hard_disk_GetPartitionCount (ExogenesisHardDisk* self);
 static guint64 exogenesis_hard_disk_GetFirstStartSector (ExogenesisHardDisk* self);
-guint64 exogenesis_hard_disk_FirstPartitionStartSector (ExogenesisHardDisk* self);
 static GeeIterator* exogenesis_hard_disk_real_iterator (GeeIterable* base);
 const gchar* exogenesis_hard_disk_get_Model (ExogenesisHardDisk* self);
 const gchar* exogenesis_hard_disk_get_Firmware (ExogenesisHardDisk* self);
@@ -2634,14 +2633,6 @@ static guint64 exogenesis_hard_disk_GetFirstStartSector (ExogenesisHardDisk* sel
 		return result;
 	}
 	_g_object_unref0 (p);
-}
-
-
-guint64 exogenesis_hard_disk_FirstPartitionStartSector (ExogenesisHardDisk* self) {
-	guint64 result = 0ULL;
-	g_return_val_if_fail (self != NULL, 0ULL);
-	result = (guint64) 0;
-	return result;
 }
 
 
