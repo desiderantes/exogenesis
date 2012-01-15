@@ -290,13 +290,26 @@ namespace Exogenesis
 
         public Gee.Iterator<InstallPartition> iterator () 
         { return this._partitions.iterator(); }  
-        
+
         public void SortPartitions()
         { 
 			this._partitions.sort();
 
 			foreach ( InstallPartition p in this._partitions )
 			{ p.SortPartitions(); }
+		}
+
+		public bool Remove( InstallPartition p )
+		{
+			int idx = this._partitions.index_of( p );
+
+			if ( idx >= 0 )
+			{ stdout.printf ( "REMOVING INDEX %s\n", idx.to_string() );
+				this._partitions.remove_at( idx );
+				return true;
+			}
+			else
+			{ return false; }
 		}
     }
 
@@ -351,6 +364,19 @@ namespace Exogenesis
         
         public void SortPartitions()
         { this._lstPartitions.sort(); }
+
+		public bool Remove( InstallPartition p )
+		{
+			int idx = this._lstPartitions.index_of ( p );
+
+			if ( idx >= 0 )
+			{ stdout.printf ( "REMOVING INDEX %s\n", idx.to_string() );
+				this._lstPartitions.remove_at ( idx );
+				return true;
+			}
+			else
+			{ return false; }
+		}
     }
 
 

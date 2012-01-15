@@ -115,6 +115,11 @@ namespace Exogenesis
 		{
 			this.GetMountPoints ();
 			this.GetFileSystemTypes ();
+
+			// check the previous OSType and get any existing mount points
+			gPreviousOS.GetFSTabMountPoints();
+
+			// get the current disks to populate combo model
 			this.GetDiskInfo();
 
 			// Copy the old Schema to the New Schema
@@ -202,9 +207,6 @@ namespace Exogenesis
 
 				this.rdoHDBefore.set_active(true);
 
-				// check the previous OSType
-				gPreviousOS.GetFSTabMountPoints();
-
 				// default model on treeview
 				this.trvHDALayout.model = this._lstPartitions;
 				
@@ -258,7 +260,7 @@ namespace Exogenesis
 			{ this.trvHDALayout.remove_column( tvc ); 	}
 			
             // Set up the treeview
-			// Selectable combos if in NEW view
+			// Selectable combos if in NEW view only
 			if ( this.rdoHDBefore.active )
 			{
 				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.MountPoint, "Mount Point", new CellRendererText(), "text", this.PartitionCols.MountPoint, null);
@@ -376,14 +378,14 @@ namespace Exogenesis
 		// Copy partition Info from Current to NewPartition
 		private InstallPartition CopyPartition( PartitionInfo pi )
 		{
-stdout.printf( "MOUNT POINT FSTAB = %s\nMOUNT POINT = %s\n\n", pi.FSTabMountPoint, pi.MountPoint );
+
 			InstallPartition ip = new InstallPartition ();
 			ip.ByteSize = pi.Capacity;
 			ip.DisplaySize = pi.CapacityDescription;
 			ip.Format = false;
 			ip.Use = false;
 			ip.NewPartition = false;
-			ip.MountPoint = "/"; // pi.FSTabMountPoint;
+			ip.MountPoint = pi.FSTabMountPoint;
 			ip.Type = pi.OSType;
 			ip.TypeID = pi.OSTypeID;
 			ip.Label = pi.Label;
@@ -1025,6 +1027,7 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
             Gtk.TreeIter iter;
             GLib.Value val;
 			InstallHardDisk ihd;
+			InstallPartition ipx;
 			uint64 available;
 
             // get the item on the path
@@ -1032,39 +1035,52 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 
 			// set the store to the one working on
 			this._lstNewPartitions;
+			this._lstNewPartitions.get_iter ( out iter, tp );
+
+			// Get the size of partition being deleted
+			this._lstNewPartitions.get_value ( iter, this.PartitionCols.ByteSize, out val );
+			available = val.get_uint64 ();
+
+			// get the harddisk from current or from new config
+			this._lstNewPartitions.get_value ( iter, this.PartitionCols.HardDisk, out val );
+			ihd = ( InstallHardDisk )val; 
+
+			// get the partition reference
+			this._lstNewPartitions.get_value ( iter, this.PartitionCols.Partition, out val );
+			ipx = ( InstallPartition )val;
 			
-            // check that the user hasn't clicked delete at drive level
-            //if ( tp.get_depth() > 0 )
-            {
-				this._lstNewPartitions.get_iter ( out iter, tp );
-				this._lstNewPartitions.get_value ( iter, this.PartitionCols.ByteSize, out val );
-				available = val.get_uint64 ();
-				this._lstNewPartitions.get_value ( iter, this.PartitionCols.HardDisk, out val );
+			// check if the iter is the extended partition
+			if ( this._lstNewPartitions.iter_has_child ( iter ) )
+			{
+				Gtk.TreeIter childIter;
+				int i;
 
-				// get the harddisk from current or from new config
-				ihd = ( InstallHardDisk )val; 
+				// Get the extended partition children count
+				i = this._lstNewPartitions.iter_n_children ( iter ) - 1;
 
-				// check if the iter is the extended partition
-				if ( this._lstNewPartitions.iter_has_child ( iter ) )
-				{
-					Gtk.TreeIter childIter;
-					int i;
+				for ( int x = i; x > -1; x-- )
+				{ 
+					GLib.Value v;
+
+					// get the parition object
+					this._lstNewPartitions.iter_nth_child ( out childIter, iter, x );
+					this._lstNewPartitions.get_value ( childIter, this.PartitionCols.Partition, out v  );
+					InstallPartition ip = (InstallPartition)v;
+
+					// remove partition from extended partition
+					ipx.Remove ( ip );
 					
-					// remove the children
-					i = this._lstNewPartitions.iter_n_children ( iter ) - 1;
-
-					for ( int x = i; x > -1; x-- )
-					{ 
-						this._lstNewPartitions.iter_nth_child ( out childIter, iter, x );
-						this._lstNewPartitions.remove ( childIter );
-					}
+					// remove from Install Object
+					this._lstNewPartitions.remove ( childIter );
 				}
+			}
 
-				// set the currently selected partition to unallocated
-				InstallPartition ipart = new InstallPartition();
-				this.PopulateListItemNew ( iter, "", "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, ipart); 
-			 	this.RecalcUnallocated(iter);
-		 	}
+			ihd.Remove ( ipx );
+			
+			// set the currently selected partition to unallocated
+			InstallPartition ipart = new InstallPartition();
+			this.PopulateListItemNew ( iter, "", "", "Unallocated", ihd, "", false, false, "", available, "Unallocated", ihd.DeviceName, "", true, ipart); 
+		 	this.RecalcUnallocated(iter);
         }
 
 		private void RecalcUnallocated(TreeIter iter)
@@ -1073,29 +1089,27 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 
 			Gtk.TreeIter parentIter;
 			GLib.Value val;
-			int level = this._lstNewPartitions.iter_depth(iter);
+			int level = this._lstNewPartitions.iter_depth( iter );
 			int i;
 			bool bPreviousUnalloc = false;
-
-			// check if this is the extended partition
 			
-			// get the iter count
-			this._lstNewPartitions.iter_parent(out parentIter, iter);
+			// get the iter count from parent - HD level
+			this._lstNewPartitions.iter_parent( out parentIter, iter );
 			
 			// check the iter is valid
-			if ( this._lstNewPartitions.iter_is_valid(parentIter) )
+			if ( this._lstNewPartitions.iter_is_valid ( parentIter ) )
 			{
 				// get the count of the parents children (i.e. siblings)
-				i = this._lstNewPartitions.iter_n_children(parentIter) - 1;
+				i = this._lstNewPartitions.iter_n_children( parentIter ) - 1;
 				
 				// Reverse loop the children
 				for ( int x = i; x > -1; x-- )
 				{
 					// check if iter is unallocated, get the size
-					this._lstNewPartitions.iter_nth_child(out partIter, parentIter, x);
-					this._lstNewPartitions.get_value( partIter, this.TreeCols.FormatType, out val );
-					
-					if ( val.get_string().down() == "unallocated" && this._lstPartitions.iter_depth(partIter) == level )
+					this._lstNewPartitions.iter_nth_child( out partIter, parentIter, x );
+					this._lstNewPartitions.get_value( partIter, this.PartitionCols.FormatType, out val );
+
+					if ( val.get_string().down().contains( "unallocated" ) ) // && this._lstPartitions.iter_depth(partIter) == level )
 					{
 						this._lstNewPartitions.get_value( partIter, this.PartitionCols.ByteSize, out val );
 						uint64 partsize = val.get_uint64();
@@ -1107,15 +1121,15 @@ stdout.printf( "Size = %s TypeID = %s  Device = %s\n", ip.ByteSize.to_string(), 
 							uint64 total;
 							Gtk.TreeIter nextIter;
 							
-							this._lstNewPartitions.iter_nth_child(out nextIter, parentIter, x+1);
+							this._lstNewPartitions.iter_nth_child( out nextIter, parentIter, x+1 );
 							this._lstNewPartitions.get_value( nextIter, this.PartitionCols.ByteSize, out val );
-							available += val.get_uint64();
+							available += val.get_uint64 ();
 							total = available + partsize;
 
 							// add the available to this iter, remove the previous one
 							this._lstNewPartitions.set_value ( partIter, this.PartitionCols.ByteSize, total );
 							this._lstNewPartitions.set_value ( partIter, this.PartitionCols.DisplaySize, GeneralFunctions.FormatHDSize(total) );
-							
+
 							// remove the previous iter
 							this._lstNewPartitions.remove( nextIter );
 						}

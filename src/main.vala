@@ -7,7 +7,7 @@ namespace Exogenesis
 {
 
     public MainWin exoMainWin;
-    Gtk.Window winbkgrd;
+    Gtk.Window winbkgrd; 
 
     // Create global control classes
     public HDManager  gHDManager;
