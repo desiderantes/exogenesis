@@ -502,6 +502,15 @@ namespace Exogenesis
 	    }
 
 
+		public FilesystemType GetFileSystemTypeFromString( string val )
+		{
+			foreach ( FilesystemType fs in this._fsTypes )
+			{
+				if ( fs.Name == val )
+				{ return fs; }
+			}
+			return null;
+		}
 //-------------------------------------------------------------------------
 // Events for devices
 //-------------------------------------------------------------------------

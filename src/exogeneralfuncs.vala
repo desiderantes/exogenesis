@@ -231,4 +231,24 @@ namespace Exogenesis
             return valid;
         }
     }
+
+// Adjustment class for size allocations on hard disks
+	public class exoSpinAdjust : Gtk.Adjustment
+	{
+		public exoSpinAdjust ( uint64 maxsize )
+		{
+//			base.value_changed.connect( this.OnValueChanged );
+			base.lower = 0;
+			base.page_increment = 10;
+			base.page_size = 100;
+			base.step_increment = 100;
+			base.upper = maxsize;
+			base.value = maxsize;
+		}
+
+		public void OnValueChanged()
+		{
+			
+		}
+	}
 }

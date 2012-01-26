@@ -66,6 +66,9 @@ namespace Exogenesis
         public void AddInstallDisk(InstallHardDisk hd)
         { this._installTargets.add(hd); }
 
+		public void RemoveInstallDisk (InstallHardDisk hd )
+		{ this._installTargets.remove( hd ); }
+		
         // clear all harddisks
         public void ClearInstallDisks()
         { this._installTargets.clear(); }
@@ -301,15 +304,29 @@ namespace Exogenesis
 
 		public bool Remove( InstallPartition p )
 		{
+			bool bRemoved = false;
+			
 			int idx = this._partitions.index_of( p );
 
 			if ( idx >= 0 )
-			{ stdout.printf ( "REMOVING INDEX %s\n", idx.to_string() );
+			{ 
+				stdout.printf ( "REMOVING INDEX %s\n", idx.to_string() );
 				this._partitions.remove_at( idx );
 				return true;
 			}
 			else
-			{ return false; }
+			{
+				foreach ( InstallPartition ip in this._partitions )
+				{
+					if ( ip.Contains( p ) )
+					{
+						ip.Remove ( p );
+						bRemoved = true;
+						break;
+					}
+				}
+				return bRemoved;
+			}
 		}
     }
 
@@ -321,14 +338,14 @@ namespace Exogenesis
         public bool     	Format 			{ get; set; }
         public bool     	Use 			{ get; set; }
         public bool		NewPartition 	{ get; set; }
-        public string   	MountPoint 		{ get; set; }
-        public string   	Type 			{ get; set; }
-        public string   	TypeID 			{ get; set; }
-        public string   	Label 			{ get; set; }
+        public string   	MountPoint 		{ get; set; default=""; }
+        public string   	Type 			{ get; set; default=""; }
+        public string   	TypeID 			{ get; set; default=""; }
+        public string   	Label 			{ get; set; default=""; }
         public uint64 		Start 			{ get; set; }
         public uint64		End 			{ get; set; }
-        public string   	Device 			{ get; set; }
-		public string		ID 				{ get; set; }
+        public string   	Device 			{ get; set; default=""; }
+		public string		ID 				{ get; set; default=""; }
 
 		private Gee.ArrayList<InstallPartition> _lstPartitions = new Gee.ArrayList<InstallPartition>();
 
@@ -350,6 +367,21 @@ namespace Exogenesis
             return 0;            
         }
 
+		public bool Contains( InstallPartition ip )
+		{
+			bool bFound = false;
+			
+			foreach ( InstallPartition p in this._lstPartitions )
+			{
+				if ( p == ip )
+				{
+					bFound = true;
+					break;
+				}
+			}
+			return bFound;
+		}
+		
 		public InstallPartition GetPartition(int idx)
 		{ return this._lstPartitions.get(idx); }
 
@@ -377,6 +409,7 @@ namespace Exogenesis
 			else
 			{ return false; }
 		}
+
     }
 
 
