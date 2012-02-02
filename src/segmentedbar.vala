@@ -245,6 +245,7 @@ public class SegmentedBar : Widget
         queue_draw();
     }
 
+
 // Public Properties
 
     public BarValueFormatHandler ValueFormatter 

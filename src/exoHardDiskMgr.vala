@@ -654,7 +654,7 @@ namespace Exogenesis
         public string 		Device 				{ get; set; }
         public string 		Connection 			{ get; set; }
         public string 		SmartStatus 		{ get; set; }
-        public int 		PartitionCount 		{ get { return GetPartitionCount(); } }
+        public int 			PartitionCount 		{ get { return GetPartitionCount(); } }
         public bool 		IsOptical 			{ get; set; }
         public string 		PreviousOS 			{ get; set; }
 		public uint64		StartSector			{ get { return this.GetFirstStartSector (); } }
@@ -745,7 +745,7 @@ namespace Exogenesis
         public uint64 		AvailableCapacity 		{ get; set; }
         public string 		MountPoint 				{ get; set; default=""; }
         public string 		PartitionFlags 			{ get; set; default=""; }
-        public int 		PartitionNumber 		{ get; set; }
+        public int 			PartitionNumber 		{ get; set; }
         public uint64 		StartSector 			{ get; set; }
         public uint64 		EndSector 				{ get; set; }
         public string 		UUID 					{ get; set; default=""; }

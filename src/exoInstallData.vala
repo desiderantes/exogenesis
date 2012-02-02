@@ -17,6 +17,7 @@
 using Gdk;
 using GLib;
 using Gee;
+using Gdu;
 
 namespace Exogenesis
 {
@@ -252,7 +253,8 @@ namespace Exogenesis
         public string 	SerialNumber 	{ get; set; }
         public bool 	IsGrubTarget	{ get; set; }
 		public uint64 	DriveSize		{ get; set; }
-		public uint64 StartSector		{ get; set; }
+		public uint64 	StartSector		{ get; set; }
+
 		
         private Gee.ArrayList<InstallPartition> _partitions = new Gee.ArrayList<InstallPartition>(); 
 
@@ -333,11 +335,14 @@ namespace Exogenesis
     // class holds the partition types, formats and sizes    
     public class InstallPartition: GLib.Object, Comparable<InstallPartition>, Iterable<InstallPartition>
     {
-        public uint64		ByteSize 		{ get; set; }
-        public string   	DisplaySize 	{ get; set; }
+        public uint64		ByteSize 		{ get { return this.End - this.Start; } }
+
+		public string   	DisplaySize 	
+		{ get { return Gdu.util_get_size_for_display( this.ByteSize, false, false ); } }
+		
         public bool     	Format 			{ get; set; }
         public bool     	Use 			{ get; set; }
-        public bool		NewPartition 	{ get; set; }
+        public bool			NewPartition 	{ get; set; }
         public string   	MountPoint 		{ get; set; default=""; }
         public string   	Type 			{ get; set; default=""; }
         public string   	TypeID 			{ get; set; default=""; }

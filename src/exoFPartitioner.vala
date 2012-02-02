@@ -733,10 +733,10 @@ namespace Exogenesis
 
             // Get the partition info, enough to install
             this._lstPartitions.get_value(iter, this.PartitionCols.ByteSize, out pVal);
-            ip.ByteSize = pVal.get_uint64() - 1048576;
+            // ip.ByteSize = pVal.get_uint64() - 1048576;
             
             this._lstPartitions.get_value(iter, this.PartitionCols.DisplaySize, out pVal);
-            ip.DisplaySize = pVal.get_string();
+           // ip.DisplaySize = pVal.get_string();
 
             this._lstPartitions.get_value(iter, this.PartitionCols.Label, out pVal);
             ip.Label = pVal.get_string();

@@ -80,6 +80,9 @@ namespace Exogenesis
 		private Gtk.Label lblPrevious;
 		private Gtk.RadioButton rdoHDBefore;
 		private Gtk.RadioButton rdoHDAfter;
+
+		// selected cell on tree (HD Size)
+		private Gtk.CellRendererSpin _spnSelected; 
 		
 		// custom widgets
 		private SegmentedBar segbarHD;
@@ -110,9 +113,6 @@ namespace Exogenesis
 		private ListStore _lstPartTypes =   new ListStore( 2, typeof(string), typeof(FilesystemType) );
         private ListStore _lstMountPoints = new ListStore( 2, typeof(string), typeof(MountPoint) );
 
-
-		// selected tree iter
-		private Gtk.TreeIter _iterSelected;
 		
 		// Constructor
 		public FHDConfigAdvanced () 
@@ -312,7 +312,7 @@ namespace Exogenesis
 
 				Gtk.CellRendererSpin spnSize = new Gtk.CellRendererSpin();
 				spnSize.editable = true;
-				// spnSize.edited.connect( this.OnSpnSizeChanged );
+				spnSize.edited.connect( this.OnSpinEdited );
 				spnSize.editing_started.connect ( this.OnSpinEditStart );
 				spnSize.adjustment = new Gtk.Adjustment(100, 100, 100 ,100, 100, 100 );
 				this.trvHDALayout.insert_column_with_attributes ( this.TreeCols.DisplaySize, "Size", spnSize, "text", this.PartitionCols.DisplaySize, null );
@@ -379,9 +379,7 @@ namespace Exogenesis
 					if ( pi.PartitionType.down().contains("extended") )
 					{
 						ip = new InstallPartition ();
-						ip.ByteSize = pi.Capacity;
 						ip.Device = pi.Device;
-						ip.DisplaySize = pi.CapacityDescription;
 						ip.Type = pi.PartitionType;
 						ip.MountPoint = "";
 						ip.Start = pi.StartSector;
@@ -407,17 +405,15 @@ namespace Exogenesis
 		{
 
 			InstallPartition ip = new InstallPartition ();
-			ip.ByteSize = pi.Capacity;
-			ip.DisplaySize = pi.CapacityDescription;
 			ip.Format = false;
 			ip.Use = false;
 			ip.NewPartition = false;
-
 			ip.MountPoint = pi.FSTabMountPoint;
 			ip.Type = pi.OSType;
 			ip.TypeID = pi.OSTypeID;
 			ip.Label = pi.Label;
 			ip.Start = pi.StartSector;
+			ip.End = pi.EndSector;
 			ip.Device = pi.Device;
 			
 			return ip;
@@ -428,6 +424,7 @@ namespace Exogenesis
         {
 	        this._lstNewPartitions.clear();
 			HardDisk selectedHD = this.GetSelectedHD ();
+			this.segbarHD.RemoveAllSegments ();
 			
             if ( gInstallData.HardDiskCount > 0 )
             {
@@ -462,7 +459,7 @@ namespace Exogenesis
 							// add the extended partition
 							this._lstNewPartitions.append ( out partExt, iterDisk );
 							
-							this.PopulateListItemNew( partExt, "", "", "Extended", iHD, "", false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
+							this.PopulateListItemNew( partExt, "Extended", "", "Extended", iHD, "", false, false, "", ip.ByteSize, ip.TypeID, ip.Device, "", false, ip );
 							PartCount++;
 
 							// this level will be the partition types inside an extended partition
@@ -820,7 +817,7 @@ namespace Exogenesis
 					if ( val.get_string().down().contains( "unallocated" ) ) 
 					{
 						this._lstNewPartitions.get_value( partIter, this.PartitionCols.ByteSize, out val );
-						uint64 partsize = val.get_uint64();
+						uint64 partsize = val.get_uint64 ();
 						
 						// check if previous iter was unallocated
 						if ( bPreviousUnalloc )
@@ -848,8 +845,7 @@ namespace Exogenesis
 							this._lstNewPartitions.set_value ( partIter, this.PartitionCols.DisplaySize, GeneralFunctions.FormatHDSize(total) );
 
 							// get the partition left and add the unallocated
-							ipkeep.ByteSize = total;
-							ipkeep.DisplaySize = GeneralFunctions.FormatHDSize( total );
+							// ipkeep.ByteSize = total;
 
 							// remove the previous iter
 							this._lstNewPartitions.remove( nextIter );
@@ -973,7 +969,7 @@ namespace Exogenesis
 			ip.Type = val;
 			ip.TypeID = gHDManager.GetFileSystemTypeFromString( val ).ID;
 
-			stdout.printf("GOT FS TYPE OF %s  ID = %s\n", val, ip.TypeID.to_string() );			
+			stdout.printf( "GOT FS TYPE OF %s  ID = %s\n", val, ip.TypeID.to_string() );			
 			
 		}
 
@@ -981,36 +977,51 @@ namespace Exogenesis
 		{
 			GLib.Value valx;
 			InstallPartition ip;
+			InstallHardDisk ihd;
+			TreeIter iter;
 			var tree_path = new TreePath.from_string( path );
 
-			this._lstNewPartitions.get_iter( out this._iterSelected, tree_path );
-			this._lstNewPartitions.get_value( this._iterSelected, this.PartitionCols.Partition, out valx );
+			// get partition
+			this._lstNewPartitions.get_iter( out iter, tree_path );
+			this._lstNewPartitions.get_value( iter, this.PartitionCols.Partition, out valx );
 			ip = ( InstallPartition )valx;
 
-			Gtk.CellRendererSpin spn = ( Gtk.CellRendererSpin )editable;
+			// get harddisk
+			this._lstNewPartitions.get_value ( iter, this.PartitionCols.HardDisk, out valx );
+			ihd = ( InstallHardDisk )valx;
+			
+			this._spnSelected = ( Gtk.CellRendererSpin )editable;
 
 			// create a spin control for sizes
 			exoSpinAdjust adj = new exoSpinAdjust( ip.ByteSize );
-			adj.value_changed.connect ( this.OnSpnValueChanged );
 			adj.lower = 0;
-			adj.upper = ip.ByteSize;
-			//adj.page_size = 1024 * 100;
+			adj.upper = ip.ByteSize / ( 1024 * 1024 ) ;
+			adj.value = ip.ByteSize / ( 1024 * 1024 ) ;
 			adj.step_increment = 100;
-			spn.adjustment = adj;
+			this._spnSelected.adjustment = adj;
+
+			stdout.printf ( "Fucking shit start %s end %s\n", ip.Start.to_string(), ip.End.to_string() );
 		}
 
-		private void OnSpnValueChanged()
+		private void OnSpinEdited( string path, string text )
 		{
+			TreeIter iter;
 			GLib.Value valx;
+			var tp = new TreePath.from_string( path );
+			InstallPartition ip;
+			InstallPartition ipFree = new InstallPartition ();
 
-			this._lstNewPartitions.get_value( this._iterSelected, this.PartitionCols.Partition, out valx );
-			InstallPartition ip = ( InstallPartition )valx;
-			
-		}
+			this._lstNewPartitions.get_iter( out iter, tp );
+			this._lstNewPartitions.get_value( iter, this.PartitionCols.Partition, out valx );
+			ip = ( InstallPartition )valx;
 
-		private void OnSpnSizeChanged( string path, string val )
-		{
-			stdout.printf( "EDIT THE FUCKER %s\n", path );
+			ip.End =  ip.Start + (uint64.parse(text) * ( 1024 * 1024 ));
+
+
+			this.ModelFromNewLayout ();
+
+			this.trvHDALayout.expand_all ();
+			this.RecalcUnallocated (iter);
 		}
 
 		public void OnDeviceConnected()
