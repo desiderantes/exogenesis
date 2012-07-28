@@ -3,9 +3,11 @@ using GLib;
 using Gst;
 using Gdk;
 // using GUdev;
+using Cairo;
+
 namespace Exogenesis
 {
-    public class FUserConfig: Gtk.Layout
+    public class FUserConfig: Gtk.Box
     {
         // exo objects
         private exoXml _xmlhandler = new exoXml();
@@ -44,7 +46,7 @@ namespace Exogenesis
         private Gtk.Image imgMissingUN;
         private Gtk.Image imgUserPwd1Err;
         private Gtk.Image imgUserPwd2Err;
-		private Gtk.Fixed fxdUserDetails;
+		private Gtk.Box fxdUserDetails;
 		private Gtk.Button btnUserSetUID;
 
         // focus list
@@ -58,12 +60,13 @@ namespace Exogenesis
         {
             try
             {
-                // get the glade details for control layout
+         // get the glade details for control layout
                 Gtk.Builder builder = new Gtk.Builder();
-                builder.add_from_file( UIPath );
-                
+                //builder.add_from_file( UIPath );
+				builder.add_from_file( "%s/src/exogenesis.ui".printf( AppPath ) );
+                stdout.printf("ADDING IT FROM THE FILE");
                 // get the main window
-                this.fxdUserDetails = (Gtk.Fixed) builder.get_object("fxdUserDetails");
+                this.fxdUserDetails = (Gtk.Box) builder.get_object("boxUserConfig");
                 this._UIDPopup = (Gtk.Window) builder.get_object("exoUIDPopup");
                 
                 // create the controls
@@ -85,9 +88,9 @@ namespace Exogenesis
                 this.algUserGrab = (Gtk.Alignment) builder.get_object("algUserGrab");
                 this.btnUserGrabImg = (Gtk.Button) builder.get_object("btnUserGrabImg");
                 this.btnUserClear = (Gtk.Button) builder.get_object("btnUserClear");
-                this.btnUserNext = (Gtk.Button) builder.get_object("btnUserNext");
+                this.btnUserNext = (Gtk.Button) builder.get_object("btnUCNext");
                 this.btnUserCancel = (Gtk.Button) builder.get_object("btnUserCancel");
-                this.btnUserPrevious = (Gtk.Button) builder.get_object("btnUserPrevious");
+                this.btnUserPrevious = (Gtk.Button) builder.get_object("btnUCPrevious");
                 this.btnUserFaceStk = (Gtk.Button) builder.get_object("btnUserFaceStk");
                 this.dwgCapture = (Gtk.DrawingArea) builder.get_object("dwgCapture");
                 this.imgMissingFN = (Gtk.Image) builder.get_object("imgUserMissingFN");
@@ -270,15 +273,31 @@ namespace Exogenesis
         // load an image into the drawing area, scale to fit
         private void SetImage(Gdk.Pixbuf image)
         {
-            if ( image != null )
+			
+            if ( image != null )				
             {
-                Gdk.Pixbuf pic = image.scale_simple(150, 125, Gdk.InterpType.BILINEAR); 
-              /*  this.dwgCapture.get_parent_window().draw_pixbuf(new Gdk.GC(dwgCapture.get_parent_window()), 
+                //Gdk.Pixbuf pic = image.scale_simple(150, 125, Gdk.InterpType.BILINEAR); 
+				//Context cr = cairo_create((Gtk.Window)this.dwgCapture.get_window());
+				//Context cr = cairo_create(this.dwgCapture.window);
+
+				var cr = Gdk.cairo_create (this.dwgCapture.get_window());
+				cairo_set_source_pixbuf (cr, image, image.get_width(),image.get_height()); 
+				cr.paint();
+				this.dwgCapture.draw(cr);
+
+				
+
+				/*this.dwgCapture.get_parent_window().draw_pixbuf(new Gdk.GC(dwgCapture.get_parent_window()), 
 													pic, 0, 0, 0, 0, 
                                                    pic.get_width(), 
                                                    pic.get_height(), 
                                                    Gdk.RgbDither.NONE, 
-                                                   0,0); */
+                                                   0,0); 
+*/
+				//Context cr2 = cairo_create(this.dwgCapture.get_parent_window());
+				//cairo_set_source_pixbuf (cr2, pic, pic.get_width(),pic.get_height()); 
+				//cr2.paint();
+				//delete cr;
             }
         }
 
@@ -306,29 +325,39 @@ namespace Exogenesis
             // check if the user clicked cancel or ok
             if ( res == Gtk.ResponseType.OK )
             { 
+				stdout.printf("I am in the if statement\n");
                 this.ClearDrawingArea(); 
                 string file = dlg.get_filename();
                 if ( file.length > 0 )
                 {
-                    Gtk.Image img = new Gtk.Image();
+					stdout.printf("I am in the if statement that says the file length is more then %s\n", file);
+                    /*Gtk.Image img = new Gtk.Image();
                     img.file = file;
                     Gdk.Pixbuf pxb = img.get_pixbuf();
                     this.SetImage ( pxb );
                     img.destroy();
+					*/
+					//Gtk.Image img = new Gtk.Image.from_file(file);
+					//this.SetImage (img.get_pixbuf());
+					//img.destroy();
+					Gtk.Image image = new Gtk.Image.from_file(file);
+					this.SetImage(image.get_pixbuf());
                 }
             }
             // kill the object
+			stdout.printf("Killing the object\n");
             dlg.destroy();
         }
         
         // event for button
         public void OnBtnUserGrabImg_Clicked(Button button)
         { 
-            if ( ! this._CapRunning )
+			
+        	if ( ! this._CapRunning )
             {
-             //   ((XOverlay) this._sink).set_xwindow_id (Gdk.x11_drawable_get_xid(this.dwgCapture.window));
-             //   this._pipeline.set_state ( State.PLAYING );
-             //   this._CapRunning = true; 
+		     	((XOverlay) this._sink).set_xwindow_id(Gdk.X11Window.get_xid(this.dwgCapture.get_window()));
+				this._pipeline.set_state ( State.PLAYING );
+                this._CapRunning = true; 
             }
             else
             {
@@ -341,7 +370,7 @@ namespace Exogenesis
            
         }
         // event for button
-        public void OnBtnUserNext_Clicked(Button button)
+		public void OnBtnUserNext_Clicked(Button button)
         { 
             if ( this.ValidateEntry() )
             {
