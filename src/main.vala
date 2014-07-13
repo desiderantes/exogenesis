@@ -19,8 +19,8 @@ namespace Exogenesis
     // Global Variables
     public string AppPath;
 	public bool DebugMode = false;
-	//public const string UIPath = "/home/steve/1-work/anjuta/exogenesis/src/exogenesis1.glade";
-	public const string UIPath = "/home/steve/1-work/anjuta/exogenesis/src/exogenesis.ui";
+	
+	public const string UIPath = "src/exogenesis.ui";
 
     public static int main (string[] args)
     {

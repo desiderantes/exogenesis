@@ -1,22 +1,21 @@
-
 [Anjuta]
 Maximized=1
-Geometry=1920x1029+0+26
-
-[Project Manager]
-Shortcut=exogenesis
-Expand=exogenesis
-
-[File Loader]
-Files=file:///home/steve/1-work/anjuta/exogenesis/src/exoFHDconfigAdvanced.vala#1118%%%file:///home/steve/1-work/anjuta/exogenesis/src/exoFCreatePartition.vala#42%%%file:///home/steve/1-work/anjuta/exogenesis/src/exoFUserConfig.vala#164%%%file:///home/steve/1-work/anjuta/exogenesis/src/exoInstallData.vala#407%%%file:///home/steve/1-work/anjuta/exogenesis/src/exoHardDiskMgr.vala#866%%%file:///home/steve/1-work/anjuta/exogenesis/src/exogenesis.ui
+Geometry=1366x743+0+25
 
 [Document Manager]
 bookmarks=<?xml version="1.0" encoding="UTF-8"?>\n<bookmarks/>\n
 
 [Execution]
-Program uri=file:///home/steve/1-work/anjuta/exogenesis/src/exogenesis
+Program uri=../../../../steve/1-work/anjuta/exogenesis/src/exogenesis
 Run in terminal=2
-Working directories=file:///home/steve/1-work/anjuta/exogenesis
+Working directories=../../../../steve/1-work/anjuta/exogenesis
+
+[Project Manager]
+Expand=exogenesis
+
+[Debugger]
+Source directories=file:///home/steve/1-work/anjuta/exogenesis/src
+Stop at beginning=2
 
 [Build]
 Configuration list=1:Default:%%%1:Debug:Debug%%%1:Profiling:Profiling%%%1:Optimized:Optimized
@@ -25,7 +24,3 @@ BuildArgs/Default=--enable-maintainer-mode
 BuildArgs/Debug=--enable-maintainer-mode 'CFLAGS=-g -O0' 'CXXFLAGS=-g -O0' 'JFLAGS=-g -O0' 'FFLAGS=-g -O0'
 BuildArgs/Profiling=--enable-maintainer-mode 'CFLAGS=-g -pg' 'CXXFLAGS=-g -pg' 'JFLAGS=-g -pg' 'FFLAGS=-g -pg'
 BuildArgs/Optimized=--enable-maintainer-mode 'CFLAGS=-O2' 'CXXFLAGS=-O2' 'JFLAGS=-O2' 'FFLAGS=-O2'
-
-[Debugger]
-Source directories=file:///home/steve/1-work/anjuta/exogenesis/src
-Stop at beginning=2
