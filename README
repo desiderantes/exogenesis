@@ -1,5 +1,5 @@
-Exogenesis : A Feature Filled Installer
-=================
+##Exogenesis : A Feature Filled Installer
+
 From auroraos.org:
 
 Exogenesis is our own installer which is currently in development. It's been designed and coded from scratch to be simple, quick and effective. You don't need 1000 options when installing; just some quick choices. Exogenesis enables you to install your system quickly and effectively with some new features never seen before.
@@ -33,20 +33,3 @@ What's Missing?
 * Upgrade Glade files to at least Gtk+-3.10
 * Port to Gstreamer 1.0 
 * A rename to use vala naming conventions
-
-References
-----------
-
-The source code from Apple for these packages is available here:
-
-- http://www.opensource.apple.com/release/developer-tools-41/
-
-
-Troubleshooting
----------------
-
-*Do not install this if you already have Xcode installed!* Mixing Xcode and osx-gcc-installer
-is known to cause various difficult-to-diagnose problems and is not recommended.
-
-If you intend to only use command line tools you should first uninstall Xcode entirely before
-installing osx-gcc-installer, or see below for other options.
