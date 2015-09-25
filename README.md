@@ -10,19 +10,19 @@ In the coming weeks we will be releasing further information on Exogenesis and s
 Dependencies
 ------------
 
- - gtk+-3.0
- - gee-0.8
- - gdk-3.0 
- - gdu 
- - liboobs-1 (who the hell name a library like that?) 
- - libxml-2.0 
- - pango 
- - pangocairo 
- - posix 
- - gconf-2.0 
- - gstreamer-0.10 
- - gstreamer-interfaces-0.10 
- - gdk-x11-3.0
+* gtk+-3.0
+* gee-0.8
+* gdk-3.0 
+* gdu 
+* liboobs-1 (who the hell names a library like that?) 
+* libxml-2.0 
+* pango 
+* pangocairo 
+* posix 
+* gconf-2.0 
+* gstreamer-0.10 
+* gstreamer-interfaces-0.10 
+* gdk-x11-3.0
 
 What's Missing?
 ----------------
